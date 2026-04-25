@@ -167,7 +167,7 @@ async function runSimulation(scenarioId) {
     if (resultEl) { resultEl.classList.remove('visible'); resultEl.innerHTML = '<div class="loading-spinner">⏳ 模拟推演中...</div>'; resultEl.classList.add('visible'); }
 
     try {
-        const resp = await fetch(`${API_BASE}/simulate`, {
+        const resp = await (window.AC && AC.secureFetch || fetch)(`${API_BASE}/simulate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ scenario: scenarioId }),
