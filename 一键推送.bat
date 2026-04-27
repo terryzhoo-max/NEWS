@@ -43,7 +43,7 @@ git diff --cached --quiet
 if %errorlevel%==0 goto :QD_SKIP
 
 echo   Changed files:
-git diff --cached --stat
+git --no-pager diff --cached --stat
 echo.
 
 set /p "QD_MSG=  Commit message (Enter=daily update): "
@@ -89,7 +89,7 @@ git diff --cached --quiet
 if %errorlevel%==0 goto :NEWS_SKIP
 
 echo   Changed files:
-git diff --cached --stat
+git --no-pager diff --cached --stat
 echo.
 
 if defined QD_MSG echo   Hint: last msg = "!QD_MSG!"
