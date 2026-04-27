@@ -16,6 +16,6 @@ ENV/
 .gemini/
 
 # Project Specific
-quant_dashboard/__pycache__/
+quant_dashboard/
 /tmp/
 verify_backend_logic.py
