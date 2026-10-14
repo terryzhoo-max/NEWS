@@ -331,17 +331,10 @@ if not defined LOG_FILE exit /b 0
 exit /b 0
 
 :GET_TIMESTAMP
-for /f "skip=1 tokens=1-6 delims=.+-" %%a in ('wmic os get localdatetime 2^>nul') do (
-    if not "%%a"=="" (
-        set "DT=%%a"
-        set "TIMESTAMP_DISPLAY=!DT:~0,4!-!DT:~4,2!-!DT:~6,2! !DT:~8,2!:!DT:~10,2!:!DT:~12,2!"
-        set "TIMESTAMP_COMPACT=!DT:~0,4!!DT:~4,2!!DT:~6,2!-!DT:~8,2!!DT:~10,2!!DT:~12,2!"
-        goto :TIMESTAMP_DONE
-    )
-)
-set "TIMESTAMP_DISPLAY=%date% %time%"
-set "TIMESTAMP_COMPACT=unknown"
-:TIMESTAMP_DONE
+for /f "delims=" %%a in ('powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'" 2^>nul') do set "TIMESTAMP_DISPLAY=%%a"
+for /f "delims=" %%a in ('powershell -NoProfile -Command "Get-Date -Format 'yyyyMMdd-HHmmss'" 2^>nul') do set "TIMESTAMP_COMPACT=%%a"
+if not defined TIMESTAMP_DISPLAY set "TIMESTAMP_DISPLAY=%date% %time%"
+if not defined TIMESTAMP_COMPACT set "TIMESTAMP_COMPACT=unknown"
 exit /b 0
 
 :WRITE_RESULT
