@@ -1,5 +1,7 @@
 """Safety contract for the local dual-repository push launcher."""
 
+import os
+import subprocess
 from pathlib import Path
 
 
@@ -9,6 +11,44 @@ SCRIPT = ROOT / "一键推送.bat"
 
 def _source() -> str:
     return SCRIPT.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+
+def test_one_click_mode_is_non_interactive_and_opens_a_result_report():
+    source = _source()
+
+    assert 'start "AlphaCore Push" "%ComSpec%"' not in source
+    assert 'set /p "COMMIT_MSG=' not in source
+    assert 'set "DEFAULT_COMMIT_MSG=update: daily update"' in source
+    assert "if defined ALPHACORE_COMMIT_MSG" in source
+    assert "if not defined ALPHACORE_PUSH_NO_PAUSE (" in source
+    assert 'start "" notepad.exe "!RESULT_FILE!"' in source
+
+
+def test_git_failure_writes_a_clear_result_report(tmp_path):
+    result_file = tmp_path / "push-result.txt"
+    env = os.environ.copy()
+    env["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32")
+    env["ALPHACORE_PUSH_NO_PAUSE"] = "1"
+    env["ALPHACORE_PUSH_RESULT_FILE"] = str(result_file)
+
+    completed = subprocess.run(
+        [os.environ["COMSPEC"], "/d", "/c", str(SCRIPT)],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    assert "[WARN] Cannot write result report" not in completed.stdout
+    report = result_file.read_text(encoding="utf-8")
+    assert "Overall: FAILED" in report
+    assert "quant_dashboard: NOT_RUN" in report
+    assert "NEWS: NOT_RUN" in report
+    assert "Errors: 1" in report
 
 
 def test_launcher_uses_its_own_directory_and_shared_repo_handler():

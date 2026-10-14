@@ -48,7 +48,7 @@ def test_git_failure_writes_a_clear_result_report(tmp_path):
     env["ALPHACORE_PUSH_RESULT_FILE"] = str(result_file)
 
     completed = subprocess.run(
-        [os.environ["COMSPEC"], "/d", "/c", f'call "{SCRIPT}"'],
+        [os.environ["COMSPEC"], "/d", "/c", str(SCRIPT)],
         cwd=ROOT,
         env=env,
         capture_output=True,
@@ -59,6 +59,7 @@ def test_git_failure_writes_a_clear_result_report(tmp_path):
     )
 
     assert completed.returncode == 1
+    assert "[WARN] Cannot write result report" not in completed.stdout
     report = result_file.read_text(encoding="utf-8")
     assert "Overall: FAILED" in report
     assert "quant_dashboard: NOT_RUN" in report
@@ -112,10 +113,12 @@ if not "!FAIL_COUNT!"=="0" (
 )
 
 call :WRITE_RESULT
-if not defined ALPHACORE_PUSH_NO_PAUSE if /I "!RESULT_READY!"=="true" (
-    echo  Opening result report: !RESULT_FILE!
-    start "" notepad.exe "!RESULT_FILE!"
-    if errorlevel 1 echo [WARN] Cannot open Notepad. Report: !RESULT_FILE!
+if not defined ALPHACORE_PUSH_NO_PAUSE (
+    if /I "!RESULT_READY!"=="true" (
+        echo  Opening result report: !RESULT_FILE!
+        start "" notepad.exe "!RESULT_FILE!"
+        if errorlevel 1 echo [WARN] Cannot open Notepad. Report: !RESULT_FILE!
+    )
 )
 exit /b !FINAL_EXIT!
 ```
@@ -131,7 +134,14 @@ if not exist "!RESULT_DIR!" (
     exit /b 0
 )
 
->"!RESULT_FILE!" (
+set "RESULT_TEMP=!RESULT_FILE!.tmp"
+if exist "!RESULT_TEMP!" del /q "!RESULT_TEMP!" >nul 2>&1
+if exist "!RESULT_TEMP!" (
+    echo [WARN] Cannot replace temporary result report: !RESULT_TEMP!
+    exit /b 0
+)
+
+>"!RESULT_TEMP!" (
     echo AlphaCore Push Result
     echo =====================
     echo Completed: !date! !time!
@@ -150,8 +160,13 @@ if not exist "!RESULT_DIR!" (
         echo Action: Review the console output and run the launcher again after fixing the error.
     )
 )
-if errorlevel 1 (
+if not exist "!RESULT_TEMP!" (
     echo [WARN] Cannot write result report: !RESULT_FILE!
+    exit /b 0
+)
+move /y "!RESULT_TEMP!" "!RESULT_FILE!" >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] Cannot publish result report: !RESULT_FILE!
     exit /b 0
 )
 set "RESULT_READY=true"

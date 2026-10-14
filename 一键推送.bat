@@ -12,7 +12,11 @@ set "PUSH_COUNT=0"
 set "FAIL_COUNT=0"
 set "QD_STATUS=NOT_RUN"
 set "NEWS_STATUS=NOT_RUN"
-set "QD_MSG="
+set "DEFAULT_COMMIT_MSG=update: daily update"
+if defined ALPHACORE_COMMIT_MSG set "DEFAULT_COMMIT_MSG=!ALPHACORE_COMMIT_MSG!"
+set "RESULT_FILE=%TEMP%\AlphaCore\latest-push-result.txt"
+if defined ALPHACORE_PUSH_RESULT_FILE set "RESULT_FILE=!ALPHACORE_PUSH_RESULT_FILE!"
+set "RESULT_READY=false"
 
 echo.
 echo  ========================================
@@ -131,17 +135,8 @@ if errorlevel 1 (
     git --no-pager diff --cached --stat
     echo.
 
-    set "COMMIT_MSG="
-    if /I "!REPO_KEY!"=="QD" (
-        set /p "COMMIT_MSG=  Commit message (Enter=daily update): "
-        if "!COMMIT_MSG!"=="" set "COMMIT_MSG=update: daily update"
-        set "QD_MSG=!COMMIT_MSG!"
-    ) else (
-        if defined QD_MSG echo   Hint: last msg = "!QD_MSG!"
-        set /p "COMMIT_MSG=  Commit message (Enter=reuse last): "
-        if "!COMMIT_MSG!"=="" set "COMMIT_MSG=!QD_MSG!"
-        if "!COMMIT_MSG!"=="" set "COMMIT_MSG=update: daily update"
-    )
+    set "COMMIT_MSG=!DEFAULT_COMMIT_MSG!"
+    echo   Commit message: "!COMMIT_MSG!"
 
     git commit -m "!COMMIT_MSG!"
     if errorlevel 1 (
@@ -220,6 +215,64 @@ if /I "!QD_STATUS!"=="PUSHED" (
 )
 
 set "FINAL_EXIT=0"
-if not "!FAIL_COUNT!"=="0" set "FINAL_EXIT=1"
-if not defined ALPHACORE_PUSH_NO_PAUSE pause
+set "OVERALL_STATUS=SUCCESS"
+if not "!FAIL_COUNT!"=="0" (
+    set "FINAL_EXIT=1"
+    set "OVERALL_STATUS=FAILED"
+)
+
+call :WRITE_RESULT
+if not defined ALPHACORE_PUSH_NO_PAUSE (
+    if /I "!RESULT_READY!"=="true" (
+        echo  Opening result report: !RESULT_FILE!
+        start "" notepad.exe "!RESULT_FILE!"
+        if errorlevel 1 echo [WARN] Cannot open Notepad. Report: !RESULT_FILE!
+    )
+)
 exit /b !FINAL_EXIT!
+
+:WRITE_RESULT
+for %%D in ("!RESULT_FILE!") do set "RESULT_DIR=%%~dpD"
+if not exist "!RESULT_DIR!" mkdir "!RESULT_DIR!" >nul 2>&1
+if not exist "!RESULT_DIR!" (
+    echo [WARN] Cannot create result directory: !RESULT_DIR!
+    exit /b 0
+)
+
+set "RESULT_TEMP=!RESULT_FILE!.tmp"
+if exist "!RESULT_TEMP!" del /q "!RESULT_TEMP!" >nul 2>&1
+if exist "!RESULT_TEMP!" (
+    echo [WARN] Cannot replace temporary result report: !RESULT_TEMP!
+    exit /b 0
+)
+
+>"!RESULT_TEMP!" (
+    echo AlphaCore Push Result
+    echo =====================
+    echo Completed: !date! !time!
+    echo Overall: !OVERALL_STATUS!
+    echo quant_dashboard: !QD_STATUS!
+    echo NEWS: !NEWS_STATUS!
+    echo Pushed: !PUSH_COUNT!
+    echo Errors: !FAIL_COUNT!
+    if /I "!QD_STATUS!"=="PUSHED" (
+        echo.
+        echo Deploy on Alibaba Cloud:
+        echo cd /root/quant_dashboard/quant_dashboard ^&^& bash update.sh
+    )
+    if /I "!OVERALL_STATUS!"=="FAILED" (
+        echo.
+        echo Action: Review the console output and run the launcher again after fixing the error.
+    )
+)
+if not exist "!RESULT_TEMP!" (
+    echo [WARN] Cannot write result report: !RESULT_FILE!
+    exit /b 0
+)
+move /y "!RESULT_TEMP!" "!RESULT_FILE!" >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] Cannot publish result report: !RESULT_FILE!
+    exit /b 0
+)
+set "RESULT_READY=true"
+exit /b 0
