@@ -5,3 +5,9 @@
 [2026-10-24 11:48:06] quant_dashboard: Committing: refactor(erp): simplify per step-3 validation - disable O7/O8/O10/O11, ERP+zone as main signal, score/position marked reference-only, shared live replay with consistency test, disable ERP CI auto-optimize
 [2026-10-24 11:48:06] quant_dashboard: PUSHED at de4d2f1
 [2026-10-24 11:48:06] --- Processing: NEWS ---
+[2026-10-24 11:48:06] NEWS: Committing: refactor(erp): simplify per step-3 validation - disable O7/O8/O10/O11, ERP+zone as main signal, score/position marked reference-only, shared live replay with consistency test, disable ERP CI auto-optimize
+[2026-10-24 11:48:06] NEWS: PUSHED at 6305353
+[2026-10-24 11:48:06] quant_dashboard: PUSHED
+[2026-10-24 11:48:06] NEWS: PUSHED
+[2026-10-24 11:48:06] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-24 11:48:06] ===== AlphaCore Push v4.0 finished =====
