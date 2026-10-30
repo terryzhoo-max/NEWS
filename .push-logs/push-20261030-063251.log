@@ -5,3 +5,9 @@
 [2026-10-30 06:32:50] quant_dashboard: Committing: chore: 清理测试写入真实库的残留数据 (一次性脚本)
 [2026-10-30 06:32:50] quant_dashboard: PUSHED at 76af720
 [2026-10-30 06:32:50] --- Processing: NEWS ---
+[2026-10-30 06:32:50] NEWS: Committing: chore: 清理测试写入真实库的残留数据 (一次性脚本)
+[2026-10-30 06:32:50] NEWS: PUSHED at 166e1c1
+[2026-10-30 06:32:50] quant_dashboard: PUSHED
+[2026-10-30 06:32:50] NEWS: PUSHED
+[2026-10-30 06:32:50] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 06:32:50] ===== AlphaCore Push v4.0 finished =====
