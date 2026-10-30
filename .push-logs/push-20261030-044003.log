@@ -5,3 +5,9 @@
 [2026-10-30 04:40:03] quant_dashboard: Committing: feat(deviation): 健康度 ETF 覆盖改为宽基+行业 ETF 占比
 [2026-10-30 04:40:03] quant_dashboard: PUSHED at 7e516e0
 [2026-10-30 04:40:03] --- Processing: NEWS ---
+[2026-10-30 04:40:03] NEWS: Committing: feat(deviation): 健康度 ETF 覆盖改为宽基+行业 ETF 占比
+[2026-10-30 04:40:03] NEWS: PUSHED at 0ef72b7
+[2026-10-30 04:40:03] quant_dashboard: PUSHED
+[2026-10-30 04:40:03] NEWS: PUSHED
+[2026-10-30 04:40:03] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 04:40:03] ===== AlphaCore Push v4.0 finished =====
