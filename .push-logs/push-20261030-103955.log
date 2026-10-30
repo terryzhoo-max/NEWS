@@ -5,3 +5,9 @@
 [2026-10-30 10:39:54] quant_dashboard: Committing: fix: restore ERP v4 tier in AIAE weights (CI fix); run-all uses v4 tier instead of legacy score
 [2026-10-30 10:39:54] quant_dashboard: PUSHED at c2f70ad
 [2026-10-30 10:39:54] --- Processing: NEWS ---
+[2026-10-30 10:39:54] NEWS: Committing: fix: restore ERP v4 tier in AIAE weights (CI fix); run-all uses v4 tier instead of legacy score
+[2026-10-30 10:39:54] NEWS: PUSHED at f31bfd3
+[2026-10-30 10:39:54] quant_dashboard: PUSHED
+[2026-10-30 10:39:54] NEWS: PUSHED
+[2026-10-30 10:39:54] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 10:39:54] ===== AlphaCore Push v4.0 finished =====
