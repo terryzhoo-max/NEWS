@@ -1,0 +1,7 @@
+[2026-10-30 09:44:31] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 09:44:31] Script root: D:\FIONA\google AI
+[2026-10-30 09:44:31] Git: git version 2.54.0.windows.1
+[2026-10-30 09:44:31] --- Processing: quant_dashboard ---
+[2026-10-30 09:44:31] quant_dashboard: Committing: ui(erp): v4 面板改版 (连续刻度/原始vs正常化/触发卡片); chore: 测试残留清理脚本
+[2026-10-30 09:44:31] quant_dashboard: PUSHED at 0ae1506
+[2026-10-30 09:44:31] --- Processing: NEWS ---
