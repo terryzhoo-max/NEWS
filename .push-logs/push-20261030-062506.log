@@ -1,0 +1,7 @@
+[2026-10-30 06:25:05] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 06:25:05] Script root: D:\FIONA\google AI
+[2026-10-30 06:25:05] Git: git version 2.54.0.windows.1
+[2026-10-30 06:25:05] --- Processing: quant_dashboard ---
+[2026-10-30 06:25:05] quant_dashboard: Committing: test: 修复测试把数据库指回真实库; AIAE 月度历史写入临时目录
+[2026-10-30 06:25:05] quant_dashboard: PUSHED at e5d7b8c
+[2026-10-30 06:25:05] --- Processing: NEWS ---
