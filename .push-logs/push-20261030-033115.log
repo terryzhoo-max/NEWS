@@ -1,0 +1,7 @@
+[2026-10-30 03:31:14] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 03:31:14] Script root: D:\FIONA\google AI
+[2026-10-30 03:31:14] Git: git version 2.54.0.windows.1
+[2026-10-30 03:31:14] --- Processing: quant_dashboard ---
+[2026-10-30 03:31:14] quant_dashboard: Committing: feat(erp): v4 仓位规则 + 一次性检验(弱通过) + 前向记录
+[2026-10-30 03:31:14] quant_dashboard: PUSHED at df5b0ab
+[2026-10-30 03:31:14] --- Processing: NEWS ---
