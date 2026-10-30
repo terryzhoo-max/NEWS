@@ -5,3 +5,9 @@
 [2026-10-30 06:43:28] quant_dashboard: Committing: ui(erp): v4 面板改版 (连续刻度/原始vs正常化/触发卡片); chore: 测试残留清理脚本
 [2026-10-30 06:43:28] quant_dashboard: PUSHED at 885e683
 [2026-10-30 06:43:28] --- Processing: NEWS ---
+[2026-10-30 06:43:28] NEWS: Committing: ui(erp): v4 面板改版 (连续刻度/原始vs正常化/触发卡片); chore: 测试残留清理脚本
+[2026-10-30 06:43:28] NEWS: PUSHED at 23fb2c6
+[2026-10-30 06:43:28] quant_dashboard: PUSHED
+[2026-10-30 06:43:28] NEWS: PUSHED
+[2026-10-30 06:43:28] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 06:43:28] ===== AlphaCore Push v4.0 finished =====
