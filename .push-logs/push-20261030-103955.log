@@ -1,0 +1,7 @@
+[2026-10-30 10:39:54] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 10:39:54] Script root: D:\FIONA\google AI
+[2026-10-30 10:39:54] Git: git version 2.54.0.windows.1
+[2026-10-30 10:39:54] --- Processing: quant_dashboard ---
+[2026-10-30 10:39:54] quant_dashboard: Committing: fix: restore ERP v4 tier in AIAE weights (CI fix); run-all uses v4 tier instead of legacy score
+[2026-10-30 10:39:54] quant_dashboard: PUSHED at c2f70ad
+[2026-10-30 10:39:54] --- Processing: NEWS ---
