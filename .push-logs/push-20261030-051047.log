@@ -1,0 +1,7 @@
+[2026-10-30 05:10:46] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 05:10:46] Script root: D:\FIONA\google AI
+[2026-10-30 05:10:46] Git: git version 2.54.0.windows.1
+[2026-10-30 05:10:46] --- Processing: quant_dashboard ---
+[2026-10-30 05:10:46] quant_dashboard: Committing: fix(db): 启动迁移无条件提交并退役 JSON 迁移; test: 测试用临时 SQLite; feat: ERP 评分改用 v4
+[2026-10-30 05:10:46] quant_dashboard: PUSHED at 8c64495
+[2026-10-30 05:10:46] --- Processing: NEWS ---
