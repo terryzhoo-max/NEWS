@@ -5,3 +5,9 @@
 [2026-10-30 04:10:29] quant_dashboard: Committing: feat(erp): v4 决策面板 + 触发地图 + 档位变化提醒
 [2026-10-30 04:10:29] quant_dashboard: PUSHED at 076c6ce
 [2026-10-30 04:10:29] --- Processing: NEWS ---
+[2026-10-30 04:10:29] NEWS: Committing: feat(erp): v4 决策面板 + 触发地图 + 档位变化提醒
+[2026-10-30 04:10:29] NEWS: PUSHED at da77687
+[2026-10-30 04:10:29] quant_dashboard: PUSHED
+[2026-10-30 04:10:29] NEWS: PUSHED
+[2026-10-30 04:10:29] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 04:10:29] ===== AlphaCore Push v4.0 finished =====
