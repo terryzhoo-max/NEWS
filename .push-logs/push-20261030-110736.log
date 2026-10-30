@@ -5,3 +5,9 @@
 [2026-10-30 11:07:35] quant_dashboard: Committing: AIAE P2-3: V6-A expanding-percentile thresholds live; V5 shadow; production contract v6
 [2026-10-30 11:07:35] quant_dashboard: PUSHED at 4461fed
 [2026-10-30 11:07:35] --- Processing: NEWS ---
+[2026-10-30 11:07:35] NEWS: Committing: AIAE P2-3: V6-A expanding-percentile thresholds live; V5 shadow; production contract v6
+[2026-10-30 11:07:35] NEWS: PUSHED at e70549b
+[2026-10-30 11:07:35] quant_dashboard: PUSHED
+[2026-10-30 11:07:35] NEWS: PUSHED
+[2026-10-30 11:07:35] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 11:07:35] ===== AlphaCore Push v4.0 finished =====
