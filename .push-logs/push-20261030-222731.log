@@ -5,3 +5,9 @@
 [2026-10-30 22:27:30] quant_dashboard: Committing: fix: backup.sh paths point to app dir; V6 thresholds no longer cache unavailable result
 [2026-10-30 22:27:30] quant_dashboard: PUSHED at 3c280fd
 [2026-10-30 22:27:30] --- Processing: NEWS ---
+[2026-10-30 22:27:30] NEWS: Committing: fix: backup.sh paths point to app dir; V6 thresholds no longer cache unavailable result
+[2026-10-30 22:27:30] NEWS: PUSHED at 24891b0
+[2026-10-30 22:27:30] quant_dashboard: PUSHED
+[2026-10-30 22:27:30] NEWS: PUSHED
+[2026-10-30 22:27:30] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 22:27:30] ===== AlphaCore Push v4.0 finished =====
