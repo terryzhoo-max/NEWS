@@ -5,3 +5,9 @@
 [2026-10-30 11:20:43] quant_dashboard: Committing: ops: monthly AIAE history auto-refresh; fix decision journal midnight flaky test; record P3 decisions
 [2026-10-30 11:20:43] quant_dashboard: PUSHED at 2dab392
 [2026-10-30 11:20:43] --- Processing: NEWS ---
+[2026-10-30 11:20:43] NEWS: Committing: ops: monthly AIAE history auto-refresh; fix decision journal midnight flaky test; record P3 decisions
+[2026-10-30 11:20:43] NEWS: PUSHED at 8386f92
+[2026-10-30 11:20:43] quant_dashboard: PUSHED
+[2026-10-30 11:20:43] NEWS: PUSHED
+[2026-10-30 11:20:43] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-30 11:20:43] ===== AlphaCore Push v4.0 finished =====

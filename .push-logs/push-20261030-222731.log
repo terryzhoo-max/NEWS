@@ -1,0 +1,7 @@
+[2026-10-30 22:27:30] ===== AlphaCore Push v4.0 started =====
+[2026-10-30 22:27:30] Script root: D:\FIONA\google AI
+[2026-10-30 22:27:30] Git: git version 2.54.0.windows.1
+[2026-10-30 22:27:30] --- Processing: quant_dashboard ---
+[2026-10-30 22:27:30] quant_dashboard: Committing: fix: backup.sh paths point to app dir; V6 thresholds no longer cache unavailable result
+[2026-10-30 22:27:30] quant_dashboard: PUSHED at 3c280fd
+[2026-10-30 22:27:30] --- Processing: NEWS ---
