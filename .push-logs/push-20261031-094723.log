@@ -5,3 +5,9 @@
 [2026-10-31 09:47:23] quant_dashboard: Committing: ui(erp): 走势图 v4 档位视图 (正常化ERP/阈值/目标仓位/前向记录) + 双视图切换
 [2026-10-31 09:47:23] quant_dashboard: PUSHED at 68409f5
 [2026-10-31 09:47:23] --- Processing: NEWS ---
+[2026-10-31 09:47:23] NEWS: Committing: ui(erp): 走势图 v4 档位视图 (正常化ERP/阈值/目标仓位/前向记录) + 双视图切换
+[2026-10-31 09:47:23] NEWS: PUSHED at 0ebfda9
+[2026-10-31 09:47:23] quant_dashboard: PUSHED
+[2026-10-31 09:47:23] NEWS: PUSHED
+[2026-10-31 09:47:23] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-31 09:47:23] ===== AlphaCore Push v4.0 finished =====
