@@ -5,3 +5,9 @@
 [2026-10-31 09:38:11] quant_dashboard: Committing: ui(erp): 页面分层 决策/证据/背景/附录, 旧框架折叠; v4 面板改版; 测试残留清理脚本
 [2026-10-31 09:38:11] quant_dashboard: PUSHED at efea58d
 [2026-10-31 09:38:11] --- Processing: NEWS ---
+[2026-10-31 09:38:11] NEWS: Committing: ui(erp): 页面分层 决策/证据/背景/附录, 旧框架折叠; v4 面板改版; 测试残留清理脚本
+[2026-10-31 09:38:11] NEWS: PUSHED at e7945bd
+[2026-10-31 09:38:11] quant_dashboard: PUSHED
+[2026-10-31 09:38:11] NEWS: PUSHED
+[2026-10-31 09:38:11] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-31 09:38:11] ===== AlphaCore Push v4.0 finished =====
