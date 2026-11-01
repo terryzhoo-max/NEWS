@@ -5,3 +5,9 @@
 [2026-11-01 09:33:43] quant_dashboard: Committing: fix(data): 利率EMA按日更新 + 海外AIAE月度斜率与质量评分
 [2026-11-01 09:33:43] quant_dashboard: PUSHED at 27466c2
 [2026-11-01 09:33:43] --- Processing: NEWS ---
+[2026-11-01 09:33:43] NEWS: Committing: fix(data): 利率EMA按日更新 + 海外AIAE月度斜率与质量评分
+[2026-11-01 09:33:43] NEWS: PUSHED at 6cf81cf
+[2026-11-01 09:33:43] quant_dashboard: PUSHED
+[2026-11-01 09:33:43] NEWS: PUSHED
+[2026-11-01 09:33:43] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 09:33:43] ===== AlphaCore Push v4.0 finished =====
