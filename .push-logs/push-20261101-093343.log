@@ -1,0 +1,7 @@
+[2026-11-01 09:33:43] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 09:33:43] Script root: D:\FIONA\google AI
+[2026-11-01 09:33:43] Git: git version 2.54.0.windows.1
+[2026-11-01 09:33:43] --- Processing: quant_dashboard ---
+[2026-11-01 09:33:43] quant_dashboard: Committing: fix(data): 利率EMA按日更新 + 海外AIAE月度斜率与质量评分
+[2026-11-01 09:33:43] quant_dashboard: PUSHED at 27466c2
+[2026-11-01 09:33:43] --- Processing: NEWS ---
