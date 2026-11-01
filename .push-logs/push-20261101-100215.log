@@ -1,0 +1,7 @@
+[2026-11-01 10:02:14] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 10:02:14] Script root: D:\FIONA\google AI
+[2026-11-01 10:02:14] Git: git version 2.54.0.windows.1
+[2026-11-01 10:02:14] --- Processing: quant_dashboard ---
+[2026-11-01 10:02:14] quant_dashboard: Committing: fix(portfolio): 日内盈亏昨收按价格日期对齐, 缺失不再用成本价顶替
+[2026-11-01 10:02:14] quant_dashboard: PUSHED at 68b7be9
+[2026-11-01 10:02:14] --- Processing: NEWS ---
