@@ -1,0 +1,7 @@
+[2026-11-01 10:49:09] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 10:49:09] Script root: D:\FIONA\google AI
+[2026-11-01 10:49:09] Git: git version 2.54.0.windows.1
+[2026-11-01 10:49:09] --- Processing: quant_dashboard ---
+[2026-11-01 10:49:09] quant_dashboard: Committing: feat: 海外ERP页前端对齐估值背景定位 + 海外AIAE P1 (美股真实AIAE) + 利率页去配比
+[2026-11-01 10:49:09] quant_dashboard: PUSHED at 33ceb09
+[2026-11-01 10:49:09] --- Processing: NEWS ---

@@ -5,3 +5,9 @@
 [2026-11-01 10:45:33] quant_dashboard: Committing: JCS: 美债方向固定中性(BOND_DIRECTION_ENABLED=False, jcs-25.3.2), 消除无效信号引发的一致性悬崖
 [2026-11-01 10:45:33] quant_dashboard: PUSHED at b5dbbbc
 [2026-11-01 10:45:33] --- Processing: NEWS ---
+[2026-11-01 10:45:33] NEWS: Committing: JCS: 美债方向固定中性(BOND_DIRECTION_ENABLED=False, jcs-25.3.2), 消除无效信号引发的一致性悬崖
+[2026-11-01 10:45:33] NEWS: PUSHED at 64ffe23
+[2026-11-01 10:45:33] quant_dashboard: PUSHED
+[2026-11-01 10:45:33] NEWS: PUSHED
+[2026-11-01 10:45:33] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 10:45:33] ===== AlphaCore Push v4.0 finished =====
