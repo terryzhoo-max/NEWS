@@ -5,3 +5,9 @@
 [2026-11-01 11:27:14] quant_dashboard: Committing: feat(erp-hk): 港股PE改用理杏仁PE-TTM历史, 恢复真实口径ERP走势
 [2026-11-01 11:27:14] quant_dashboard: PUSHED at 1a7d5a5
 [2026-11-01 11:27:14] --- Processing: NEWS ---
+[2026-11-01 11:27:14] NEWS: Committing: feat(erp-hk): 港股PE改用理杏仁PE-TTM历史, 恢复真实口径ERP走势
+[2026-11-01 11:27:14] NEWS: PUSHED at 450c2a4
+[2026-11-01 11:27:14] quant_dashboard: PUSHED
+[2026-11-01 11:27:14] NEWS: PUSHED
+[2026-11-01 11:27:14] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 11:27:14] ===== AlphaCore Push v4.0 finished =====
