@@ -1,0 +1,7 @@
+[2026-11-01 09:51:55] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 09:51:55] Script root: D:\FIONA\google AI
+[2026-11-01 09:51:55] Git: git version 2.54.0.windows.1
+[2026-11-01 09:51:55] --- Processing: quant_dashboard ---
+[2026-11-01 09:51:55] quant_dashboard: Committing: fix(data): 动量VIX不可用按保守档 + 红利分红保底值不托底不缓存
+[2026-11-01 09:51:55] quant_dashboard: PUSHED at e43db76
+[2026-11-01 09:51:55] --- Processing: NEWS ---
