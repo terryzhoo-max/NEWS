@@ -1,0 +1,7 @@
+[2026-11-01 11:53:44] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 11:53:44] Script root: D:\FIONA\google AI
+[2026-11-01 11:53:44] Git: git version 2.54.0.windows.1
+[2026-11-01 11:53:44] --- Processing: quant_dashboard ---
+[2026-11-01 11:53:44] quant_dashboard: Committing: rates V1.9: 移除止盈/逆向/久期规则→评分验证说明; 快照卡片与徽章中性色; 维度描述去操作暗示
+[2026-11-01 11:53:44] quant_dashboard: PUSHED at 15f5b16
+[2026-11-01 11:53:44] --- Processing: NEWS ---
