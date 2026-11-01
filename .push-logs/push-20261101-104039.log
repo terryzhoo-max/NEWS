@@ -1,0 +1,7 @@
+[2026-11-01 10:40:39] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 10:40:39] Script root: D:\FIONA\google AI
+[2026-11-01 10:40:39] Git: git version 2.54.0.windows.1
+[2026-11-01 10:40:39] --- Processing: quant_dashboard ---
+[2026-11-01 10:40:39] quant_dashboard: Committing: feat(aiae-global): P1 美股真实AIAE(Z.1)+nowcast/分位/隐含回报; 三地引擎删除仓位矩阵与ERP读取
+[2026-11-01 10:40:39] quant_dashboard: PUSHED at 0fcd965
+[2026-11-01 10:40:39] --- Processing: NEWS ---
