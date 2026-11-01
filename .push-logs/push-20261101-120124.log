@@ -5,3 +5,9 @@
 [2026-11-01 12:01:23] quant_dashboard: Committing: rates V1.9: 移除止盈/逆向/久期规则与诊断操作卡; 快照/诊断/评分统一中性色; 维度描述去操作暗示
 [2026-11-01 12:01:23] quant_dashboard: PUSHED at e65e28f
 [2026-11-01 12:01:23] --- Processing: NEWS ---
+[2026-11-01 12:01:23] NEWS: Committing: rates V1.9: 移除止盈/逆向/久期规则与诊断操作卡; 快照/诊断/评分统一中性色; 维度描述去操作暗示
+[2026-11-01 12:01:23] NEWS: PUSHED at 7162edc
+[2026-11-01 12:01:23] quant_dashboard: PUSHED
+[2026-11-01 12:01:23] NEWS: PUSHED
+[2026-11-01 12:01:23] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 12:01:23] ===== AlphaCore Push v4.0 finished =====
