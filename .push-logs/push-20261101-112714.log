@@ -1,0 +1,7 @@
+[2026-11-01 11:27:14] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 11:27:14] Script root: D:\FIONA\google AI
+[2026-11-01 11:27:14] Git: git version 2.54.0.windows.1
+[2026-11-01 11:27:14] --- Processing: quant_dashboard ---
+[2026-11-01 11:27:14] quant_dashboard: Committing: feat(erp-hk): 港股PE改用理杏仁PE-TTM历史, 恢复真实口径ERP走势
+[2026-11-01 11:27:14] quant_dashboard: PUSHED at 1a7d5a5
+[2026-11-01 11:27:14] --- Processing: NEWS ---
