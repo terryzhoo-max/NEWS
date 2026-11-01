@@ -5,3 +5,9 @@
 [2026-10-31 23:57:11] quant_dashboard: Committing: feat(erp): 港股ERP利率改为美国10Y实际利率(港币挂钩), 绕开合成历史
 [2026-10-31 23:57:11] quant_dashboard: PUSHED at f1c113d
 [2026-10-31 23:57:11] --- Processing: NEWS ---
+[2026-10-31 23:57:11] NEWS: Committing: feat(erp): 港股ERP利率改为美国10Y实际利率(港币挂钩), 绕开合成历史
+[2026-10-31 23:57:11] NEWS: PUSHED at 40fb6e2
+[2026-10-31 23:57:11] quant_dashboard: PUSHED
+[2026-10-31 23:57:11] NEWS: PUSHED
+[2026-10-31 23:57:11] Pushed: 2  Errors: 0  Exit: 0
+[2026-10-31 23:57:11] ===== AlphaCore Push v4.0 finished =====

@@ -1,0 +1,7 @@
+[2026-11-01 02:45:08] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 02:45:08] Script root: D:\FIONA\google AI
+[2026-11-01 02:45:08] Git: git version 2.54.0.windows.1
+[2026-11-01 02:45:08] --- Processing: quant_dashboard ---
+[2026-11-01 02:45:08] quant_dashboard: Committing: fix(data): FRED缓存按窗口区分 + 策略路由降级不出信号 + 部署自动清缓存
+[2026-11-01 02:45:08] quant_dashboard: PUSHED at 55ca657
+[2026-11-01 02:45:08] --- Processing: NEWS ---
