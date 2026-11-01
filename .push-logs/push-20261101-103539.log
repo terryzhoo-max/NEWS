@@ -1,0 +1,7 @@
+[2026-11-01 10:35:39] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 10:35:39] Script root: D:\FIONA\google AI
+[2026-11-01 10:35:39] Git: git version 2.54.0.windows.1
+[2026-11-01 10:35:39] --- Processing: quant_dashboard ---
+[2026-11-01 10:35:39] quant_dashboard: Committing: rates V1.7: P0语义修复 + V2预注册验证DEMOTE → 多资产美债固定SAA 30(policy v2.2), 利率页仅背景
+[2026-11-01 10:35:39] quant_dashboard: PUSHED at 1d4cb36
+[2026-11-01 10:35:39] --- Processing: NEWS ---
