@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+.gemini/
+.worktrees/
+
+# Project Specific
+quant_dashboard/
+/tmp/
+verify_backend_logic.py
