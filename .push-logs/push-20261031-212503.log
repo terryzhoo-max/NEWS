@@ -4,3 +4,9 @@
 [2026-10-31 21:25:02] --- Processing: quant_dashboard ---
 [2026-10-31 21:25:02] quant_dashboard: No changes
 [2026-10-31 21:25:02] --- Processing: NEWS ---
+[2026-10-31 21:25:02] NEWS: Committing: ui(erp): 区间色系统一/策略页去重复卡片/首页自适应网格/标签与对比度打磨
+[2026-10-31 21:25:02] NEWS: PUSHED at 21125e9
+[2026-10-31 21:25:02] quant_dashboard: NO_CHANGES
+[2026-10-31 21:25:02] NEWS: PUSHED
+[2026-10-31 21:25:02] Pushed: 1  Errors: 0  Exit: 0
+[2026-10-31 21:25:02] ===== AlphaCore Push v4.0 finished =====
