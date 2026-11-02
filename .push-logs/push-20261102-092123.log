@@ -5,3 +5,9 @@
 [2026-11-02 09:21:22] quant_dashboard: Committing: fix(decision): /optimize-path 与 /position-path 共用 create_order 门控, 未授权不运行优化不生成路径; docs: 决策中枢精简方案(含未门控接口清单)+改前基线
 [2026-11-02 09:21:22] quant_dashboard: PUSHED at 10506aa
 [2026-11-02 09:21:22] --- Processing: NEWS ---
+[2026-11-02 09:21:22] NEWS: Committing: fix(decision): /optimize-path 与 /position-path 共用 create_order 门控, 未授权不运行优化不生成路径; docs: 决策中枢精简方案(含未门控接口清单)+改前基线
+[2026-11-02 09:21:22] NEWS: PUSHED at a342ab7
+[2026-11-02 09:21:22] quant_dashboard: PUSHED
+[2026-11-02 09:21:22] NEWS: PUSHED
+[2026-11-02 09:21:22] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 09:21:22] ===== AlphaCore Push v4.0 finished =====
