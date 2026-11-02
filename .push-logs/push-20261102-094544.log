@@ -5,3 +5,9 @@
 [2026-11-02 09:45:44] quant_dashboard: Committing: feat(decision): 宏观背景合并 — AIAE 面板+市场动态+JCS 读数合为默认折叠面板(摘要写全名称单位), 删除「权重35」
 [2026-11-02 09:45:44] quant_dashboard: PUSHED at 1a6519b
 [2026-11-02 09:45:44] --- Processing: NEWS ---
+[2026-11-02 09:45:44] NEWS: Committing: feat(decision): 宏观背景合并 — AIAE 面板+市场动态+JCS 读数合为默认折叠面板(摘要写全名称单位), 删除「权重35」
+[2026-11-02 09:45:44] NEWS: PUSHED at d4f78e0
+[2026-11-02 09:45:44] quant_dashboard: PUSHED
+[2026-11-02 09:45:44] NEWS: PUSHED
+[2026-11-02 09:45:44] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 09:45:44] ===== AlphaCore Push v4.0 finished =====
