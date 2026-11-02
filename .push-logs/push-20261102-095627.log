@@ -1,0 +1,7 @@
+[2026-11-02 09:56:26] ===== AlphaCore Push v4.0 started =====
+[2026-11-02 09:56:26] Script root: D:\FIONA\google AI
+[2026-11-02 09:56:26] Git: git version 2.54.0.windows.1
+[2026-11-02 09:56:26] --- Processing: quant_dashboard ---
+[2026-11-02 09:56:26] quant_dashboard: Committing: feat(decision): 复盘标签 — 执行目标 vs 实际仓位(执行层前向记录+跟踪止盈日终快照, 只读接口 /decision/exec-vs-actual), 准确率两块移入折叠区, 跳转组合页决定记录与复盘; 旧 JCS/建议仓位时间线由开关关闭
+[2026-11-02 09:56:26] quant_dashboard: PUSHED at d0b4a54
+[2026-11-02 09:56:26] --- Processing: NEWS ---

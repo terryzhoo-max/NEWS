@@ -5,3 +5,9 @@
 [2026-11-02 09:49:09] quant_dashboard: Committing: feat(decision): 执行区并入约束瀑布+降仓路径(当前→执行目标差额/约金额/分3-5个交易日/每日约pp)+分批状态, 波动预算面板与仓位路径卡片并入后隐藏; fix: 降仓节奏统一为执行层 EXEC_PARAMS.reduce_days (回撤刹车降仓清单不再写1–3个交易日)
 [2026-11-02 09:49:09] quant_dashboard: PUSHED at b216e2e
 [2026-11-02 09:49:09] --- Processing: NEWS ---
+[2026-11-02 09:49:09] NEWS: Committing: feat(decision): 执行区并入约束瀑布+降仓路径(当前→执行目标差额/约金额/分3-5个交易日/每日约pp)+分批状态, 波动预算面板与仓位路径卡片并入后隐藏; fix: 降仓节奏统一为执行层 EXEC_PARAMS.reduce_days (回撤刹车降仓清单不再写1–3个交易日)
+[2026-11-02 09:49:09] NEWS: PUSHED at 1b732e1
+[2026-11-02 09:49:09] quant_dashboard: PUSHED
+[2026-11-02 09:49:09] NEWS: PUSHED
+[2026-11-02 09:49:09] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 09:49:09] ===== AlphaCore Push v4.0 finished =====
