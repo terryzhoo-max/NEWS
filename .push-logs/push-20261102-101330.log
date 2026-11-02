@@ -5,3 +5,9 @@
 [2026-11-02 10:13:29] quant_dashboard: Committing: fix(alert): 关闭 jcs_low 告警(JCS 为背景读数, 不写入不推送, 规则保留可恢复); docs: 实施日志补本轮待办
 [2026-11-02 10:13:29] quant_dashboard: PUSHED at 4f6698c
 [2026-11-02 10:13:29] --- Processing: NEWS ---
+[2026-11-02 10:13:29] NEWS: Committing: fix(alert): 关闭 jcs_low 告警(JCS 为背景读数, 不写入不推送, 规则保留可恢复); docs: 实施日志补本轮待办
+[2026-11-02 10:13:29] NEWS: PUSHED at 144645e
+[2026-11-02 10:13:29] quant_dashboard: PUSHED
+[2026-11-02 10:13:29] NEWS: PUSHED
+[2026-11-02 10:13:29] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 10:13:29] ===== AlphaCore Push v4.0 finished =====
