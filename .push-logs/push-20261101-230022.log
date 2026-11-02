@@ -1,0 +1,7 @@
+[2026-11-01 23:00:22] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 23:00:22] Script root: D:\FIONA\google AI
+[2026-11-01 23:00:22] Git: git version 2.54.0.windows.1
+[2026-11-01 23:00:22] --- Processing: quant_dashboard ---
+[2026-11-01 23:00:22] quant_dashboard: Committing: fix(P0): 执行层/合规/审计统一经 risk_state 读回撤刹车与止损状态(缓存→日终快照), 修复服务重启后执行目标丢失回撤上限(63); 审计遇陈旧决策缓存同步重算合规
+[2026-11-01 23:00:22] quant_dashboard: PUSHED at b08ca1b
+[2026-11-01 23:00:22] --- Processing: NEWS ---
