@@ -5,3 +5,9 @@
 [2026-11-02 09:32:46] quant_dashboard: Committing: feat(decision): 模块开关 config/decision_modules.json, 隐藏17项(全球温度/多资产/波段守卫/叙事/NLP/V5配额/情景/BL优化/尾部风险/指数绩效/相关性MCTR/Jaccard/板块集中度/Brinson/漂移/日历/参数对比), 关闭项不发请求, 波段守卫预热暂停
 [2026-11-02 09:32:46] quant_dashboard: PUSHED at c6afe19
 [2026-11-02 09:32:46] --- Processing: NEWS ---
+[2026-11-02 09:32:46] NEWS: Committing: feat(decision): 模块开关 config/decision_modules.json, 隐藏17项(全球温度/多资产/波段守卫/叙事/NLP/V5配额/情景/BL优化/尾部风险/指数绩效/相关性MCTR/Jaccard/板块集中度/Brinson/漂移/日历/参数对比), 关闭项不发请求, 波段守卫预热暂停
+[2026-11-02 09:32:46] NEWS: PUSHED at d9cbcde
+[2026-11-02 09:32:46] quant_dashboard: PUSHED
+[2026-11-02 09:32:46] NEWS: PUSHED
+[2026-11-02 09:32:46] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 09:32:46] ===== AlphaCore Push v4.0 finished =====
