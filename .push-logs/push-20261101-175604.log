@@ -5,3 +5,9 @@
 [2026-11-01 17:56:03] quant_dashboard: Committing: feat(decision): JCS 定位为宏观环境读数 (jcs-26.0) — MR/BOND 移出, 执行区只用 AIAE 执行目标, 删除 JCS 风控门槛与多资产闸门
 [2026-11-01 17:56:03] quant_dashboard: PUSHED at 96c1757
 [2026-11-01 17:56:03] --- Processing: NEWS ---
+[2026-11-01 17:56:03] NEWS: Committing: feat(decision): JCS 定位为宏观环境读数 (jcs-26.0) — MR/BOND 移出, 执行区只用 AIAE 执行目标, 删除 JCS 风控门槛与多资产闸门
+[2026-11-01 17:56:03] NEWS: PUSHED at e006a8b
+[2026-11-01 17:56:03] quant_dashboard: PUSHED
+[2026-11-01 17:56:03] NEWS: PUSHED
+[2026-11-01 17:56:03] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 17:56:03] ===== AlphaCore Push v4.0 finished =====
