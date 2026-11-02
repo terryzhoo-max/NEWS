@@ -5,3 +5,9 @@
 [2026-11-01 18:47:19] quant_dashboard: Committing: feat(decision): JCS 宏观环境读数 (jcs-26.0) + 终端风视觉 + 修复决策契约版本不一致导致中枢误降级
 [2026-11-01 18:47:19] quant_dashboard: PUSHED at 414957c
 [2026-11-01 18:47:19] --- Processing: NEWS ---
+[2026-11-01 18:47:19] NEWS: Committing: feat(decision): JCS 宏观环境读数 (jcs-26.0) + 终端风视觉 + 修复决策契约版本不一致导致中枢误降级
+[2026-11-01 18:47:19] NEWS: PUSHED at cd1186d
+[2026-11-01 18:47:19] quant_dashboard: PUSHED
+[2026-11-01 18:47:19] NEWS: PUSHED
+[2026-11-01 18:47:19] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 18:47:19] ===== AlphaCore Push v4.0 finished =====
