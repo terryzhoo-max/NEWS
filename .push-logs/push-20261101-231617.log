@@ -1,0 +1,7 @@
+[2026-11-01 23:16:16] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 23:16:16] Script root: D:\FIONA\google AI
+[2026-11-01 23:16:16] Git: git version 2.54.0.windows.1
+[2026-11-01 23:16:16] --- Processing: quant_dashboard ---
+[2026-11-01 23:16:16] quant_dashboard: Committing: fix: 组合波动预算缓存缺失时当场重算(合规规则重启后不再放行); 决策页风险矩阵集中度改用合规主题口径(占账户, 红线读合规引擎)
+[2026-11-01 23:16:16] quant_dashboard: PUSHED at f8e6b11
+[2026-11-01 23:16:16] --- Processing: NEWS ---

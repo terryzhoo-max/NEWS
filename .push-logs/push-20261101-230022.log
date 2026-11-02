@@ -5,3 +5,9 @@
 [2026-11-01 23:00:22] quant_dashboard: Committing: fix(P0): 执行层/合规/审计统一经 risk_state 读回撤刹车与止损状态(缓存→日终快照), 修复服务重启后执行目标丢失回撤上限(63); 审计遇陈旧决策缓存同步重算合规
 [2026-11-01 23:00:22] quant_dashboard: PUSHED at b08ca1b
 [2026-11-01 23:00:22] --- Processing: NEWS ---
+[2026-11-01 23:00:22] NEWS: Committing: fix(P0): 执行层/合规/审计统一经 risk_state 读回撤刹车与止损状态(缓存→日终快照), 修复服务重启后执行目标丢失回撤上限(63); 审计遇陈旧决策缓存同步重算合规
+[2026-11-01 23:00:22] NEWS: PUSHED at b7479df
+[2026-11-01 23:00:22] quant_dashboard: PUSHED
+[2026-11-01 23:00:22] NEWS: PUSHED
+[2026-11-01 23:00:22] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-01 23:00:22] ===== AlphaCore Push v4.0 finished =====
