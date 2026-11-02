@@ -5,3 +5,9 @@
 [2026-11-02 09:56:26] quant_dashboard: Committing: feat(decision): 复盘标签 — 执行目标 vs 实际仓位(执行层前向记录+跟踪止盈日终快照, 只读接口 /decision/exec-vs-actual), 准确率两块移入折叠区, 跳转组合页决定记录与复盘; 旧 JCS/建议仓位时间线由开关关闭
 [2026-11-02 09:56:26] quant_dashboard: PUSHED at d0b4a54
 [2026-11-02 09:56:26] --- Processing: NEWS ---
+[2026-11-02 09:56:26] NEWS: Committing: feat(decision): 复盘标签 — 执行目标 vs 实际仓位(执行层前向记录+跟踪止盈日终快照, 只读接口 /decision/exec-vs-actual), 准确率两块移入折叠区, 跳转组合页决定记录与复盘; 旧 JCS/建议仓位时间线由开关关闭
+[2026-11-02 09:56:26] NEWS: PUSHED at 8132ba8
+[2026-11-02 09:56:26] quant_dashboard: PUSHED
+[2026-11-02 09:56:26] NEWS: PUSHED
+[2026-11-02 09:56:26] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 09:56:26] ===== AlphaCore Push v4.0 finished =====
