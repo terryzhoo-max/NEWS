@@ -1,0 +1,7 @@
+[2026-11-02 10:30:07] ===== AlphaCore Push v4.0 started =====
+[2026-11-02 10:30:07] Script root: D:\FIONA\google AI
+[2026-11-02 10:30:07] Git: git version 2.54.0.windows.1
+[2026-11-02 10:30:07] --- Processing: quant_dashboard ---
+[2026-11-02 10:30:07] quant_dashboard: Committing: fix(aiae): 当日换手率未发布(NaN)时跳过取最近有效交易日, 不再被截断为+1.0计入HF Delta, 修复 /aiae/report JSON 序列化 500
+[2026-11-02 10:30:07] quant_dashboard: PUSHED at 6782d35
+[2026-11-02 10:30:07] --- Processing: NEWS ---
