@@ -5,3 +5,9 @@
 [2026-11-02 10:06:39] quant_dashboard: Committing: fix(report): 日报仓位只引用执行目标 — 删 AIAE 矩阵上限/仓位目标升降/MR 20 四引擎权重表/海外建议仓位与操作列; 叙事与 LLM 提示词禁止新仓位数字和买卖建议
 [2026-11-02 10:06:39] quant_dashboard: PUSHED at 5588486
 [2026-11-02 10:06:39] --- Processing: NEWS ---
+[2026-11-02 10:06:39] NEWS: Committing: fix(report): 日报仓位只引用执行目标 — 删 AIAE 矩阵上限/仓位目标升降/MR 20 四引擎权重表/海外建议仓位与操作列; 叙事与 LLM 提示词禁止新仓位数字和买卖建议
+[2026-11-02 10:06:39] NEWS: PUSHED at 846cc6e
+[2026-11-02 10:06:39] quant_dashboard: PUSHED
+[2026-11-02 10:06:39] NEWS: PUSHED
+[2026-11-02 10:06:39] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-02 10:06:39] ===== AlphaCore Push v4.0 finished =====
