@@ -1,0 +1,7 @@
+[2026-11-01 23:26:40] ===== AlphaCore Push v4.0 started =====
+[2026-11-01 23:26:40] Script root: D:\FIONA\google AI
+[2026-11-01 23:26:40] Git: git version 2.54.0.windows.1
+[2026-11-01 23:26:40] --- Processing: quant_dashboard ---
+[2026-11-01 23:26:40] quant_dashboard: Committing: fix(audit): ERP缓存新鲜度排除离线研究产物(erp_allocation_price等), 修复本机误判失败
+[2026-11-01 23:26:40] quant_dashboard: PUSHED at c67d256
+[2026-11-01 23:26:40] --- Processing: NEWS ---
