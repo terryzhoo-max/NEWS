@@ -5,3 +5,9 @@
 [2026-11-03 02:04:34] quant_dashboard: Committing: 合规 AIAE 过热限制: 档位缺失/无效时加仓方向阻断(不再默认 R3 放行), 减仓/持有不受限; 首页主结论兜底不再按 AIAE 档位编造操作; 补测试; 方案文档记录安全修复进度与延后待办
 [2026-11-03 02:04:34] quant_dashboard: PUSHED at ef358ae
 [2026-11-03 02:04:34] --- Processing: NEWS ---
+[2026-11-03 02:04:34] NEWS: Committing: 合规 AIAE 过热限制: 档位缺失/无效时加仓方向阻断(不再默认 R3 放行), 减仓/持有不受限; 首页主结论兜底不再按 AIAE 档位编造操作; 补测试; 方案文档记录安全修复进度与延后待办
+[2026-11-03 02:04:34] NEWS: PUSHED at 654803f
+[2026-11-03 02:04:34] quant_dashboard: PUSHED
+[2026-11-03 02:04:34] NEWS: PUSHED
+[2026-11-03 02:04:34] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 02:04:34] ===== AlphaCore Push v4.0 finished =====
