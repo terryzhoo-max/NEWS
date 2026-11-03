@@ -1,0 +1,7 @@
+[2026-11-02 19:33:16] ===== AlphaCore Push v4.0 started =====
+[2026-11-02 19:33:16] Script root: D:\FIONA\google AI
+[2026-11-02 19:33:16] Git: git version 2.54.0.windows.1
+[2026-11-02 19:33:16] --- Processing: quant_dashboard ---
+[2026-11-02 19:33:16] quant_dashboard: Committing: feat(home): 首页背景区去仓位数字与操作指令 — 删 AIAE Cap 条/五档仓位区间/核心指令与情景, 策略配置只显示权重, 策略卡去建议仓位/满仓位/Cap, ERP v4 标为背景读数(删'仓位以 v4 为准') — 首页口径统一 A3
+[2026-11-02 19:33:16] quant_dashboard: PUSHED at 7e37dcf
+[2026-11-02 19:33:16] --- Processing: NEWS ---
