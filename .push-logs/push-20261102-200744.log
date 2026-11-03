@@ -1,0 +1,7 @@
+[2026-11-02 20:07:43] ===== AlphaCore Push v4.0 started =====
+[2026-11-02 20:07:43] Script root: D:\FIONA\google AI
+[2026-11-02 20:07:43] Git: git version 2.54.0.windows.1
+[2026-11-02 20:07:43] --- Processing: quant_dashboard ---
+[2026-11-02 20:07:43] quant_dashboard: Committing: fix(compliance): 仓位超限检查先核验账户敞口再核验执行目标(两者缺一均不通过), 修复无执行层状态环境(CI)下原因文案 — B 跟进
+[2026-11-02 20:07:43] quant_dashboard: PUSHED at 079334b
+[2026-11-02 20:07:43] --- Processing: NEWS ---
