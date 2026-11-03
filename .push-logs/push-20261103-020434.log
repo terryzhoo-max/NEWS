@@ -1,0 +1,7 @@
+[2026-11-03 02:04:34] ===== AlphaCore Push v4.0 started =====
+[2026-11-03 02:04:34] Script root: D:\FIONA\google AI
+[2026-11-03 02:04:34] Git: git version 2.54.0.windows.1
+[2026-11-03 02:04:34] --- Processing: quant_dashboard ---
+[2026-11-03 02:04:34] quant_dashboard: Committing: 合规 AIAE 过热限制: 档位缺失/无效时加仓方向阻断(不再默认 R3 放行), 减仓/持有不受限; 首页主结论兜底不再按 AIAE 档位编造操作; 补测试; 方案文档记录安全修复进度与延后待办
+[2026-11-03 02:04:34] quant_dashboard: PUSHED at ef358ae
+[2026-11-03 02:04:34] --- Processing: NEWS ---
