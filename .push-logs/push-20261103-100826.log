@@ -5,3 +5,9 @@
 [2026-11-03 10:08:26] quant_dashboard: Committing: test(guard): 测试守卫放行新建空目录(CI 无 data_lake 导致收集阶段整体中断 #116-#118), 新增测试离线夹具(FRED 只读缓存不联网不写, 港股南向不拉取), 修复本机 5 个守卫命中; 只改测试代码
 [2026-11-03 10:08:26] quant_dashboard: PUSHED at b818980
 [2026-11-03 10:08:26] --- Processing: NEWS ---
+[2026-11-03 10:08:26] NEWS: Committing: test(guard): 测试守卫放行新建空目录(CI 无 data_lake 导致收集阶段整体中断 #116-#118), 新增测试离线夹具(FRED 只读缓存不联网不写, 港股南向不拉取), 修复本机 5 个守卫命中; 只改测试代码
+[2026-11-03 10:08:26] NEWS: PUSHED at 1423b53
+[2026-11-03 10:08:26] quant_dashboard: PUSHED
+[2026-11-03 10:08:26] NEWS: PUSHED
+[2026-11-03 10:08:26] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 10:08:26] ===== AlphaCore Push v4.0 finished =====
