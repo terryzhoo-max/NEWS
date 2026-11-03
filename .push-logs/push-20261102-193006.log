@@ -1,0 +1,7 @@
+[2026-11-02 19:30:06] ===== AlphaCore Push v4.0 started =====
+[2026-11-02 19:30:06] Script root: D:\FIONA\google AI
+[2026-11-02 19:30:06] Git: git version 2.54.0.windows.1
+[2026-11-02 19:30:06] --- Processing: quant_dashboard ---
+[2026-11-02 19:30:06] quant_dashboard: Committing: feat(home): 首页仓位/偏离/集中度改读决策中枢 — 执行目标为唯一仓位数字(含回撤刹车), 集中度读合规(占账户); 删除首页自算可执行上限/集中度/一致度门槛, 修复回退到矩阵上限 — 首页口径统一 A2
+[2026-11-02 19:30:06] quant_dashboard: PUSHED at 725ef8a
+[2026-11-02 19:30:06] --- Processing: NEWS ---
