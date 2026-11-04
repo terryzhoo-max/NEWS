@@ -1,10 +1,16 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul 2>&1
-title AlphaCore Push v4.0
+title AlphaCore Push v4.1
 
 REM ============================================================
-REM AlphaCore Push Script v4.0
+REM AlphaCore Push Script v4.1
+REM v4.1 (2026-11-03): quant_dashboard runs a pre-push check before commit:
+REM   quant_dashboard\_dev_tools\pre_push_check.py (file confirmation + tests
+REM   on the staged snapshot). Emergency skip (logged, commit tagged):
+REM     set ALPHACORE_SKIP_TESTS=1
+REM     set "ALPHACORE_SKIP_REASON=<reason>"
+REM   The NEWS repo flow is unchanged.
 REM ============================================================
 
 REM ---- Resolve script root ----
@@ -53,11 +59,11 @@ echo !RUN_ID! >"!LOCK_FILE!"
 REM ---- Banner ----
 echo.
 echo  ========================================
-echo    AlphaCore Push v4.0 - Safe Mode
+echo    AlphaCore Push v4.1 - Safe Mode
 echo    !TIMESTAMP_DISPLAY!
 echo  ========================================
 echo.
-call :LOG "===== AlphaCore Push v4.0 started ====="
+call :LOG "===== AlphaCore Push v4.1 started ====="
 call :LOG "Script root: !SCRIPT_ROOT!"
 
 REM ---- Pre-flight ----
@@ -182,12 +188,21 @@ if !BEHIND! gtr 0 (
 
 if !AHEAD! gtr 0 set "NEEDS_PUSH=1"
 
+REM quant_dashboard: pre-push check (replaces "git add -A"; tests the staged snapshot)
+if /I "!REPO_KEY!"=="QD" (
+    call :QD_PRE_PUSH
+    if errorlevel 1 goto :PROCESS_REPO_FAIL
+    goto :STAGE_DONE
+)
+
 git add -A
 if errorlevel 1 (
     echo   [FAIL] git add failed
     call :LOG "[FAIL] !REPO_NAME!: git add failed"
     goto :PROCESS_REPO_FAIL
 )
+
+:STAGE_DONE
 
 git diff --cached --quiet
 if errorlevel 1 (
@@ -197,10 +212,19 @@ if errorlevel 1 (
     echo.
 
     set "COMMIT_MSG=!DEFAULT_COMMIT_MSG!"
+    set "USE_MSG_FILE=0"
+    if /I "!REPO_KEY!"=="QD" if exist "!MSG_FILE!" (
+        set "USE_MSG_FILE=1"
+        set /p COMMIT_MSG=<"!MSG_FILE!"
+    )
     echo   Commit: "!COMMIT_MSG!"
     call :LOG "!REPO_NAME!: Committing: !COMMIT_MSG!"
 
-    git commit -m "!COMMIT_MSG!"
+    if "!USE_MSG_FILE!"=="1" (
+        git commit -F "!MSG_FILE!"
+    ) else (
+        git commit -m "!COMMIT_MSG!"
+    )
     if errorlevel 1 (
         echo   [FAIL] Commit failed
         call :LOG "[FAIL] !REPO_NAME!: Commit failed"
@@ -267,6 +291,43 @@ if /I "!REPO_ACTIVE!"=="true" popd
 exit /b 0
 
 REM ============================================================
+REM :QD_PRE_PUSH - quant_dashboard pre-push check (exit 1 = abort)
+REM   Confirms files left out of the commit, then runs CI-equivalent
+REM   tests on the staged snapshot. See _dev_tools\pre_push_check.py.
+REM ============================================================
+:QD_PRE_PUSH
+set "QD_APP=!REPO_DIR!\quant_dashboard"
+set "PP_SCRIPT=!QD_APP!\_dev_tools\pre_push_check.py"
+set "PP_PY=!QD_APP!\.venv\Scripts\python.exe"
+set "MSG_FILE=%TEMP%\AlphaCore\commit-msg-!RUN_ID!.txt"
+if exist "!MSG_FILE!" del /q "!MSG_FILE!" >nul 2>&1
+if not exist "!PP_SCRIPT!" (
+    echo   [FAIL] Pre-push check not found: !PP_SCRIPT!
+    call :LOG "[FAIL] !REPO_NAME!: pre_push_check.py not found"
+    exit /b 1
+)
+if not exist "!PP_PY!" (
+    where python >nul 2>&1
+    if errorlevel 1 (
+        echo   [FAIL] Python not found: !PP_PY!
+        call :LOG "[FAIL] !REPO_NAME!: Python not found for pre-push check"
+        exit /b 1
+    )
+    set "PP_PY=python"
+)
+if "!ALPHACORE_SKIP_TESTS!"=="1" call :LOG "!REPO_NAME!: ALPHACORE_SKIP_TESTS=1 set"
+call :LOG "!REPO_NAME!: pre-push check started"
+"!PP_PY!" "!PP_SCRIPT!" --repo "!REPO_DIR!" --remote "!REMOTE!" --branch "!BRANCH!" --log "!LOG_FILE!" --skip-log "!LOG_DIR!\skipped-tests.log" --msg "!DEFAULT_COMMIT_MSG!" --msg-out "!MSG_FILE!"
+if errorlevel 1 (
+    echo.
+    echo   [FAIL] Pre-push check failed. Nothing committed or pushed for !REPO_NAME!.
+    call :LOG "[FAIL] !REPO_NAME!: pre-push check failed"
+    exit /b 1
+)
+call :LOG "!REPO_NAME!: pre-push check passed"
+exit /b 0
+
+REM ============================================================
 REM :CLEANUP - Summary, log, lock release
 REM ============================================================
 :CLEANUP
@@ -293,7 +354,7 @@ if "!FAIL_COUNT!"=="!REPO_COUNT!" set "FINAL_EXIT=2"
 call :LOG "quant_dashboard: !QD_STATUS!"
 call :LOG "NEWS: !NEWS_STATUS!"
 call :LOG "Pushed: !PUSH_COUNT!  Errors: !FAIL_COUNT!  Exit: !FINAL_EXIT!"
-call :LOG "===== AlphaCore Push v4.0 finished ====="
+call :LOG "===== AlphaCore Push v4.1 finished ====="
 
 if exist "!LOG_FILE!" (
     echo  Log saved: !LOG_FILE!
@@ -304,6 +365,7 @@ call :WRITE_RESULT
 
 REM ---- Release lock ----
 if exist "!LOCK_FILE!" del /q "!LOCK_FILE!" >nul 2>&1
+if defined MSG_FILE if exist "!MSG_FILE!" del /q "!MSG_FILE!" >nul 2>&1
 
 REM ---- Clean old logs (keep last 30) ----
 call :CLEAN_OLD_LOGS
