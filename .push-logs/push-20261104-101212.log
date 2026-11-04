@@ -9,3 +9,9 @@
 [2026-11-04 10:12:12] quant_dashboard: Committing: feat(import-ui): 2b 补 估值时点旁加常用时点快捷按钮 15:00/11:30/09:00 (点击填入, 无默认值)
 [2026-11-04 10:12:12] quant_dashboard: PUSHED at 2f3cebb
 [2026-11-04 10:12:12] --- Processing: NEWS ---
+[2026-11-04 10:12:12] NEWS: Committing: feat(import-ui): 2b 补 估值时点旁加常用时点快捷按钮 15:00/11:30/09:00 (点击填入, 无默认值)
+[2026-11-04 10:12:12] NEWS: PUSHED at ed34eb5
+[2026-11-04 10:12:12] quant_dashboard: PUSHED
+[2026-11-04 10:12:12] NEWS: PUSHED
+[2026-11-04 10:12:12] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-04 10:12:12] ===== AlphaCore Push v4.1 finished =====
