@@ -9,3 +9,9 @@
 [2026-11-04 10:24:22] quant_dashboard: Committing: feat(authority-ui): 3 本机非权威横幅 + 执行目标/合规/跟踪止盈/回撤刹车旁非权威标注, 服务器不显示
 [2026-11-04 10:24:22] quant_dashboard: PUSHED at f20091a
 [2026-11-04 10:24:22] --- Processing: NEWS ---
+[2026-11-04 10:24:22] NEWS: Committing: feat(authority-ui): 3 本机非权威横幅 + 执行目标/合规/跟踪止盈/回撤刹车旁非权威标注, 服务器不显示
+[2026-11-04 10:24:22] NEWS: PUSHED at da074d0
+[2026-11-04 10:24:22] quant_dashboard: PUSHED
+[2026-11-04 10:24:22] NEWS: PUSHED
+[2026-11-04 10:24:22] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-04 10:24:22] ===== AlphaCore Push v4.1 finished =====
