@@ -1,0 +1,2957 @@
+From 8259cae243b98465e7604f539dc41553b7fb6dc4 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 12:53:36 -0600
+Subject: [PATCH 1/4] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=E8=A7=86?=
+ =?UTF-8?q?=E8=A7=89=E8=BD=AE=20V1=EF=BC=9Aac=5Ftokens=20=E6=8E=A5?=
+ =?UTF-8?q?=E5=85=A5=E3=80=81=E5=8E=BB=E8=A3=85=E9=A5=B0=E3=80=81=E5=8E=BB?=
+ =?UTF-8?q?=20emoji=E3=80=81=E7=BA=A2=E6=B6=A8=E7=BB=BF=E8=B7=8C=E3=80=81?=
+ =?UTF-8?q?=E8=8B=B1=E6=96=87=E6=B8=85=E7=90=86?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ docs/PLAN_B_IMPLEMENTATION_LOG.md    |   15 +
+ docs/PORTFOLIO_SLIMMING_PLAN.md      |   75 +
+ portfolio.html                       |  112 +-
+ static/css/portfolio.css             | 1920 +++++++++-----------------
+ static/js/decision_review_panel.js   |   11 +-
+ static/js/lookthrough_panel.js       |   38 +-
+ static/js/portfolio_manager.js       |   66 +-
+ tests/test_import_valuation_time.cjs |    3 +-
+ tests/test_portfolio_visual.cjs      |  153 ++
+ 9 files changed, 1009 insertions(+), 1384 deletions(-)
+ create mode 100644 tests/test_portfolio_visual.cjs
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index fdde92d..96b3bd6 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1585,3 +1585,18 @@ node tests\test_decision_review_panel.cjs
+ - 5 项核对：只改认证与前端请求头，执行目标、合规、跟踪止盈、买入门控、当前仓位的计算未改；上线前后各核对一次。
+ - 本机推送并部署（`bash update.sh`，11-04 11:0x 美中 / 01:03 服务器）。服务器核对：无令牌 `GET /api/v1/system/authority` → 401，`/health` → 200，启动日志"读取鉴权: 开启, /api/ 读取需 X-API-Key (/health 与页面除外)"。待办：浏览器 18000 输入一次令牌后各页正常与 5 项核对；次日看审计页 A 区定时任务运行记录；观察 1–2 天后视为完成。
+ - 修补（11-04 11:2x，界面提交）：Claude 内置浏览器不支持 `prompt()`（调用即抛错"prompt() is not supported."），读取 401 后既不弹框也无提示条，页面空白。改为：`AC._promptKey` 捕获异常；弹窗不可用、取消或留空时，页面底部提示条自带密码输入框（回车 / "保存并刷新"），不再依赖弹窗；`secureFetch` 写入无令牌且不支持弹窗时显示同一输入条并取消该次操作。`alphacore_utils.js` v5 / 策略页与国债页 v207。测试：`test_read_auth_frontend.cjs` 增加"prompt 抛错 → 输入条、空值不保存、回车保存并刷新、写入取消不发请求"；本地 Playwright 模拟 prompt 抛错：输入条出现，填令牌回车后刷新、请求带令牌、提示条消失。前端 32 个文件全部通过。只改前端令牌输入方式，5 项未改。
++
++## 组合页视觉轮（2026-11-04，方案见 `docs/PORTFOLIO_SLIMMING_PLAN.md` 第 10 节）
++
++- 审计与改前基线（服务器经隧道，只读，12:3x CST）：执行目标 25%；合规 blocked（硬阻断：主题集中度、仓位超限检查；警告：组合波动预算）；跟踪止盈 RED 1 / GREEN 13；买入门控不允许加仓；当前仓位 100.0%；账户收益 +10.26% / 回撤 −26.2%（第 3 档）/ 波动 46.3%；14 只、总市值 ¥1,438,741.59。页面高度（`#dashboard-main`）桌面 3,451px、手机 6,253px，手机持仓表横向滚动（770 / 301px）。
++- B 核实：`drawdown_brake`、`stop_breach_no_add` 均 passed，detail"减仓操作, 不受限制"——页面级检查按减仓方向评估，设计如此，非缺数据放行（未登记【高】待办）。
++- 12:36 用户确认（方案 10.2）。提交顺序 V1 → A → V2 → V3。
++
++### V1 · 基础（样式与文案）
++- `portfolio.html` 最先加载 `ac_tokens.css?v=2`；`portfolio.css` 分"可见模块 / 隐藏模块"两节：可见一节只用 `var()`（无字面色值、渐变、毛玻璃、阴影、循环 / 入场动画、hover 位移），面板实底 + 1px 线 + 6px 圆角（保留 `glass-panel` 类名，`.pf-content .glass-panel` 覆盖）；隐藏一节为 8 个关闭模块原样式，Trade / 清零弹窗共用类限定到 `#trade-modal` / `#reset-modal`，两弹窗外观不变。
++- 去 emoji（标题、按钮、导入弹窗、Toast、JS 文本；接口文案 `stripEmoji` 过滤，Toast 改纯文本写入）；去英文与中英混排（Portfolio Management、TOTAL NET ASSET VALUE、CASH、MKT VALUE、Position Monitoring、Import、CANCEL、TXT → SYSTEM、Empty Portfolio）；页面标题"投资组合"；删写死的"● LIVE"；穿透区 / 决定记录区内联 `<style>` 移入 portfolio.css。
++- 涨跌语义类 `.ac-up / .ac-down / .ac-flat`（`--mkt-up / --mkt-down`）：持仓表盈亏（原 `pnl>=0 → pf-up` 为绿色，方向反了且 0 算涨）、导入预览现价、决定复盘实际收益（原 `dr-pos` 绿 / `dr-neg` 红，反了）；"若执行"假设对照不着色。占比条去 `weightColor`（>15% 红、>10% 黄）改中性。
++- 穿透 KPI 由 `slip-kpi-*`（滑点模块类名）改 `lt-kpi-*`；决定记录按钮由 `slip-refresh-btn` 改 `pf-btn pf-btn-sm`（无测试引用）。
++- 版本号：portfolio.css 40→41，portfolio_manager.js 51→52，lookthrough_panel.js 2→3，decision_review_panel.js 2→3。`test_import_valuation_time.cjs` 断言 `portfolio_manager.js?v=52`（原因：本提交改动该文件）。
++- 测试：新增 `tests/test_portfolio_visual.cjs`（ac_tokens 先加载、portfolio.css 不定义变量、可见一节无字面色值 / 渐变 / 毛玻璃 / 阴影 / 动画 / 位移、隐藏一节只含隐藏模块选择器、可见区域无 emoji 与英文、可见渲染函数无内联颜色、涨跌类方向、假设对照不着色、隐藏模块选择器与 `.pm-off`、权威收尾轮标记、估值时点必填无默认值）；前端 34 个 `.cjs` 全部通过。
++- 5 项核对：只改样式与文案，执行目标、合规、跟踪止盈、买入门控、当前仓位与 KPI 数字未改。
+diff --git a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+index eac2f26..c6cfa26 100644
+--- a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
++++ b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+@@ -191,3 +191,78 @@
+ - 核对各 ETF 行业未知占比（11-04 用户决定登记）：合规主题集中度读数里的 `unknown_industry` 按 ETF 分列，定期查看是否有 ETF 穿透后行业未知占比偏高（行业表缺新上市公司等），必要时补行业表或 `theme_overrides`。
+ - ~~本机非权威环境关闭导入 / 清零（`ACCOUNT_AUTHORITY`，见 `docs/ACCOUNT_AUTHORITY_AND_RISK_REFRESH_PLAN.md` 1.3）。~~ —— 已处理（11-04，1a / 1b / 3）。
+ - 首页精简时决定 AI 模块去留（11-04 起 AI 服务暂停：DeepSeek 余额不足，`config/job_switches.json`）：首页 AI 情报流、AI 助手、日报 AI 叙事（日报已用规则模板照常生成）。
++
++## 10. 视觉轮（2026-11-04，方案已确认，按本节实施）
++
++范围：第 7 节视觉待办 + 视觉轮提示第 3 节。只改视觉与展示文案；接口、字段、口径、数字不变（A 提交例外，见 10.3）。`config/portfolio_modules.json` 关闭的 8 个模块不做视觉处理，DOM 与开关不变。权威收尾轮内容（非权威横幅 / `data-ac-authority-tag`、本机导入禁用 `data-ac-account-write`、估值时点必填无默认值）不弱化。
++
++### 10.1 改前基线（服务器经隧道 localhost:18000，2026-11-04 12:3x CST，只读）
++
++| 核对项 | 值 |
++|---|---|
++| 执行目标 | 25%（`/decision/hub` action_plan.execution_target） |
++| 合规结论 | blocked；硬阻断 2 条：主题集中度、仓位超限检查；警告 1 条：组合波动预算 |
++| 跟踪止盈 | RED 1 / YELLOW 0 / GREEN 13 / LEGACY 0 |
++| 买入门控 | 不允许加仓（permissions.increase = false） |
++| 当前仓位 | 100.0%（account_exposure.pct） |
++| 账户收益 / 当前回撤 / 组合波动 | +10.26%（10-30 → 11-04，近似） / −26.2%（回撤刹车第 3 档） / 46.3%（目标 30%） |
++| 持仓只数 / 总市值 / 总资产 | 14 只 / ¥1,438,741.59 / ¥1,438,760.18 |
++| 页面高度（主滚动区 `#dashboard-main`） | 桌面 1440：3,451px；手机 375：6,253px（持仓表横向滚动 770 / 301px） |
++
++B 核实（同一次读取）：`drawdown_brake` 与 `stop_breach_no_add` 均 passed = true，detail = "减仓操作, 不受限制 (刹车上限已计入 AIAE 执行目标)"。页面级合规检查按减仓方向评估，两条规则对减仓不拦截，**设计如此**，非缺数据放行；回撤刹车与止损越线不进合规告警条属正常。
++
++### 10.2 确认记录（2026-11-04 12:36）
++
++- 冲突 A：选 (a)。单独后端小提交（排在 V2 之前）：valuation 的 `price` 保留 3 位小数。前端 ETF 成本价、现价 3 位，个股 2 位。
++- 冲突 B：选 (a)，回撤刹车档位标签与决策中枢一致（第 1 档 warn 描边、第 2 档及以上阻断实底）。规则更正：**阻断色用于真实的禁止状态（合规硬阻断、回撤刹车、止损已触发），必须带文字标签**，不只限合规。档位标签只写"回撤刹车第 N 档"，不显示接口 label 里的"降至 x%"（执行目标是唯一仓位数字）。
++- 冲突 C：行业表不再截断"行业未知"，未知始终在最后一行。
++- 第 4 节 1：压力情景、决定复盘的"假设对照 / 若执行"用中性色；实际收益、实际增值红涨绿跌。
++- 第 4 节 2：买入 / 卖出用中性描边文字标签。
++- 第 4 节 3：加"执行目标 x% · 来自决策中枢"：读首页执行区同一接口 `/api/v1/decision/hub`（`action_plan.execution_target`），加 `data-ac-authority-tag`，不可用显示 "--"，不计算差额。
++- 第 4 节 4：本轮不加跟踪止盈状态列，登记待办（B 核实结果：止损越线不进合规告警条，属设计）。
++- 第 4 节 5：桌面不合并（按市值降序后小仓位自然在底部）；只在手机卡片列表合并"其余 N 只 · 合计 x%"，默认收起；成本价兜底持仓不参与合并；2% 写成常量并注明"展示用，非风险阈值"。
++- 第 4 节 6：手机端穿透区默认折叠，合规判定行在折叠区外始终可见；桌面保持展开。
++- 提交顺序：V1 → A → V2 → V3。版本号断言改成新号，报告写原因。
++
++### 10.3 改动清单
++
++| 提交 | 区域 | 改动 |
++|---|---|---|
++| V1 | 全局 | `ac_tokens.css` 先于页面样式加载；可见模块样式只用 `var()`，portfolio.css 不定义色值变量；面板实底 `--dc-surface` + 1px `--dc-line` + 6px 圆角 + 无阴影（保留 `glass-panel` 类名，折叠逻辑与测试依赖，`.pf-content .glass-panel` 覆盖）；去渐变、发光、循环动画、入场动画、hover 位移；去 emoji（标题、按钮、弹窗、Toast、JS 文本，接口文案过滤 emoji）；去英文与中英混排；页面标题"投资组合"；删写死的"● LIVE"（其样式随去装饰删除）；穿透区 / 决定记录区内联 `<style>` 移入 portfolio.css；涨跌语义类 `.ac-up / .ac-down / .ac-flat`；`.pf-danger / .pf-up` 从可见模块移除 |
++| A | 后端 | `PortfolioEngine.get_valuation` 的 `price` 由 2 位改为 3 位小数（个股原价 2 位不变）；下游与数字变化见 10.4 |
++| V2 | 顶栏 | 合规徽章：硬阻断实底洋红"合规阻断 · N 条硬阻断"、警告 warn 描边、通过 pass 描边、加载中 / 不可用 info，不可用旁写"不代表通过"；保留"读取于 HH:MM"与跳转；导入为唯一实色按钮、同步为描边按钮；本机禁用态中性虚线 + "不可用"，不用阻断色 |
++| V2 | 核心资产 | 总资产中性唯一大数字；副行"N 只持仓 · 当前仓位 x% · 现金 y%"；`.ac-asof` 持仓截至行；执行目标行；五个 KPI 同一组件（市值、现金、账户收益、当前回撤、组合波动：标签 → 数字 → 来源与时间）；账户收益红涨绿跌；回撤 / 波动数字中性；回撤刹车档位标签复用 `.ac-tag-*`（与决策中枢档位映射一致）；波动只写"目标 30%"，标签读合规「组合波动预算」状态；"数据不足"用 `.ac-state-partial`；告警条阻断行阻断样式、数据质量 info |
++| V2 | 持仓表 | 默认市值降序；类型标签 ETF / 科创 / 创业 / 主板 / 北交（代码前缀规则，见 10.5）；ETF 成本价 / 现价 3 位、个股 2 位；占比条中性 `--dc-data`、以最大持仓为满格、删 >15% / >10% 阈值；weight 缺失 "--"；盈亏金额与百分比同色、0 中性；价格来源：成本价兜底 `.ac-tag-warn`，券商 / TS 为 info 小字；表头下图例；名称、行业 `esc()` 转义 |
++| V3 | 穿透 | 合规行为第一信息（状态标签 + 主题读数 + "唯一判定"），下一行行业拆分，口径不一致 warn；行业 / 公司暴露中性横条降序，"行业未知"末行 `--dc-data-dim` + "未知"；合规 `unknown_industry` 按 ETF 小字；风险贡献改为仓位占比 / 风险占比两列并排中性条；压力情景"条件估计 · 非预测"、数字中性；折叠标题 chevron SVG、整行可点 |
++| V3 | 决定记录 / 成交记录 | 表单控件同高、统一按钮类（`slip-refresh-btn` 无测试引用，改为 `pf-btn`）；保留"显示金额"（默认隐藏）；采用 / 未采用 / 暂不行动中性标签；"不足以评价" info 标签；实际收益红涨绿跌、假设对照中性；成交记录按持仓表规范，买 / 卖中性描边标签 |
++| V3 | 导入弹窗 | 去 📥 ✅ 📄 ⚠️、TXT → SYSTEM、CANCEL；估值时点必填醒目、未填时确认按钮禁用可辨；快捷时点选中 `--dc-line-strong` 实底；对账单日期 `.ac-asof`；预览价格按涨跌方向、相等中性 |
++| V3 | 手机 375 | 首屏：总资产、当前仓位、合规徽章；KPI 两列不换行不截断；持仓卡片列表（名称 + 代码 + 类型 / 市值 + 占比 / 盈亏%，点开看其余），不横向滚动，小仓位合并；穿透默认折叠；改前 / 改后实测高度 |
++
++### 10.4 A：`price` 字段下游（全仓库扫描 `get_valuation()` 的 15 个调用方与前端 `/portfolio/valuation`）
++
++| 下游 | 是否读 `price` | 数字变化 |
++|---|---|---|
++| `get_valuation` 自身：市值、权重、盈亏、总资产 | 否（用未取整价格） | 不变 |
++| `account_exposure`（当前仓位）、合规、波动预算、回撤刹车、跟踪止盈、决策中枢、审计页、优化器、Brinson / 因子、仓位路径、风险矩阵、AI 助手估值摘要、日终快照 | 否 | 不变 |
++| `get_intraday_pnl`（portfolio_engine.py:555 `current_price = pos["price"]`）→ `/portfolio/intraday-pnl`、AI 助手日内摘要（AI 已暂停；`intraday_pnl.js` 无页面加载） | 是 | 只影响现价非整分的 ETF。按 11-04 服务器持仓：159218 −24.60、159516 +150.50、159995 −984.80、510300 −87.50，日内盈亏合计 −946.40 元；个股、588000（1.340）为 0。输出字段 `current_price` 仍按 2 位取整（未改） |
++| 组合页持仓表现价 | 是 | ETF 显示 3 位（V2） |
++
++### 10.5 类型标签规则（展示用；写入 `tests/test_portfolio_visual.cjs`）
++
++| 规则 | 标签 |
++|---|---|
++| `.SH` 且 5 开头；`.SZ` 且 15 / 16 开头 | ETF |
++| 688 / 689 | 科创 |
++| 300 / 301 | 创业 |
++| 600 / 601 / 603 / 605、000 / 001 / 002 / 003 | 主板 |
++| `.BJ`，或 4 / 8 / 920 开头 | 北交 |
++| 其他 | 不打标签 |
++
++价格精度：ETF（同上判定）3 位，其余 2 位。
++
++### 10.6 视觉轮登记的待办
++
++- 持仓表只读跟踪止盈状态列（RED / YELLOW / GREEN / LEGACY 文字标签，点击跳决策中枢）：新增读取，本轮不加（10.2 第 4 节 4）。
++- 隐藏模块内联颜色未改（只列出）：`portfolio_manager.js` Brinson `pctColor`、因子 `pctColor` / `heatColor`（绿涨红跌），`.slip-side-buy / -sell`、`.slip-bps-*`；恢复模块前需按红涨绿跌与 `ac_tokens.css` 处理。
++- `/portfolio/intraday-pnl` 11-05 凌晨读数合计 +134,009（+10.26%），与"日内"含义不符（疑似昨收对齐取到非上一交易日），待核实；本轮不处理。
++- `styles.css` 全站旧变量（侧栏 emoji、DEEP 徽章内联色）属全站导航，本轮不动。
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index e9240d6..c12c73f 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -3,12 +3,14 @@
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>AlphaCore | 投资组合管理</title>
+-    <meta name="description" content="AlphaCore 机构级投资组合管理终端 — 实时估值、MCTR风险归因、净值曲线、交易执行">    <link rel="stylesheet" href="./static/css/fonts.css?v=1">
++    <title>AlphaCore | 投资组合</title>
++    <meta name="description" content="AlphaCore 投资组合 — 持仓、估值、集中度与风险读数">
++    <link rel="stylesheet" href="./static/css/ac_tokens.css?v=2"><!-- 2026-11-04 视觉轮: 共用颜色变量, 先于页面样式加载 -->
++    <link rel="stylesheet" href="./static/css/fonts.css?v=1">
+ 
+     <link rel="stylesheet" href="./static/css/styles.css?v=12">
+     <link rel="stylesheet" href="./static/css/visual_excellence.css?v=3">
+-    <link rel="stylesheet" href="./static/css/portfolio.css?v=40">
++    <link rel="stylesheet" href="./static/css/portfolio.css?v=41">
+     <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+     <script>window.echarts || document.write('<script src="./static/vendor/echarts.min.js"><\/script>')</script>
+@@ -55,18 +57,17 @@
+ 
+     <main class="dashboard" id="dashboard-main">
+         <!-- ═══ Topbar ═══ -->
+-        <header class="topbar" style="margin-bottom: 20px;">
+-            <div class="welcome-box" style="margin:0">
+-                <h2 style="font-size: 1.5rem">组合管理中心 <span style="font-size: 0.8rem; font-weight: 300; opacity: 0.6; font-family: 'Outfit'">/ Portfolio Management</span></h2>
++        <header class="topbar pf-topbar">
++            <div class="welcome-box pf-title">
++                <h2>投资组合</h2>
+             </div>
+-            <div class="actions" style="display: flex; gap: 12px; align-items: center;">
++            <div class="actions pf-actions">
+                 <a class="pf-compliance-dot pf-compliance-unknown" id="pf-compliance-dot" href="decision.html#compliance-engine-panel" data-state="loading"
+                    title="合规结论来自合规引擎（与决策中枢同一结果）；点击查看决策中枢合规区"><span id="pf-compliance-text">合规加载中</span><span data-ac-authority-tag></span><small id="pf-compliance-time" class="pf-compliance-time"></small></a>
+-                <span class="pf-live-badge" id="pf-live-badge">● LIVE</span>
+-                <button class="btn btn-import" id="import-btn" data-ac-account-write="import">📥 导入持仓 / Import</button>
++                <button class="btn btn-import" id="import-btn" data-ac-account-write="import">导入持仓</button>
+                 <span class="pf-authority-note" id="pf-authority-note" hidden></span>
+                 <input type="file" id="import-file-input" accept=".txt,.csv,.xls" style="display:none;">
+-                <button class="btn btn-sync" id="sync-btn">🔄 同步数据</button>
++                <button class="btn btn-sync" id="sync-btn">同步数据</button>
+                 <button class="btn btn-reset" id="reset-btn" data-ac-account-write>🗑️ 清零</button>
+                 <button class="btn btn-primary" id="open-trade-btn" data-ac-account-write style="box-shadow: 0 0 20px rgba(59,130,246,0.3);">➕ 新增仓位 / Trade</button>
+             </div>
+@@ -77,9 +78,9 @@
+             <div class="pf-hero glass-panel" id="pf-hero-zone">
+                 <div class="pf-hero-main">
+                     <div class="pf-hero-left">
+-                        <div class="pf-hero-label">TOTAL NET ASSET VALUE</div>
++                        <div class="pf-hero-label">总资产</div>
+                         <div class="pf-hero-nav" id="nav-val">--</div>
+-                        <div class="pf-hero-sub" id="pf-hero-sub">组合持仓 <span id="pos-count">0</span> 只 · 当前仓位 <span id="total-position-weight" style="font-weight:700">--</span>% · 现金占比 <span id="cash-weight">--</span>% · <span id="pf-pos-asof" style="opacity:0.6"></span></div>
++                        <div class="pf-hero-sub" id="pf-hero-sub">组合持仓 <span id="pos-count">0</span> 只 · 当前仓位 <b id="total-position-weight">--</b>% · 现金占比 <span id="cash-weight">--</span>% · <span id="pf-pos-asof"></span></div>
+                     </div>
+                     <div class="pf-hero-right">
+                         <div class="pf-sparkline-container" id="pf-sparkline" style="height: 60px; width: 200px;"></div>
+@@ -87,11 +88,11 @@
+                 </div>
+                 <div class="pf-hero-cards">
+                     <div class="pf-kpi-card">
+-                        <span class="pf-kpi-label">可用现金 CASH</span>
+-                        <span class="pf-kpi-value pf-gold" id="port-cash">--</span>
++                        <span class="pf-kpi-label">现金</span>
++                        <span class="pf-kpi-value" id="port-cash">--</span>
+                     </div>
+                     <div class="pf-kpi-card">
+-                        <span class="pf-kpi-label">持仓市值 MKT VALUE</span>
++                        <span class="pf-kpi-label">持仓市值</span>
+                         <span class="pf-kpi-value" id="port-mv">--</span>
+                     </div>
+                     <!-- 2026-11-03 组合页精简 P3: 三项只读唯一来源 (static/js/portfolio_kpis.js); 原 ROI / 120D 波动 / 夏普 / 最大回撤已删除 -->
+@@ -111,13 +112,13 @@
+                         <small class="pf-kpi-sub" id="port-dd-sub"></small>
+                     </div>
+                 </div>
+-                <div class="pf-alert-strip" id="pf-alerts-hero" style="margin-top:14px;"></div>
++                <div class="pf-alert-strip" id="pf-alerts-hero"></div>
+             </div>
+ 
+             <!-- ═══ ZONE 2: 持仓监控表 ═══ -->
+             <div class="glass-panel pf-positions-panel">
+                 <div class="pf-panel-header">
+-                    <h3>📋 分项底仓池 <span class="pf-panel-sub">Position Monitoring</span></h3>
++                    <h3>持仓明细</h3>
+                     <div class="pf-table-controls">
+                         <span class="pf-pos-count" id="pf-total-positions">0 只持仓</span>
+                     </div>
+@@ -146,24 +147,9 @@
+ 
+             <!-- ═══ ZONE 3: 穿透暴露与压力情景 (阶段3B-4, 只读; 2026-11-03 P4 上移、默认展开) ═══ -->
+             <div class="glass-panel pf-brinson-panel" id="pf-lookthrough-zone">
+-                <style>
+-                    #pf-lookthrough-zone h4 { margin: 14px 0 6px; font-size: 0.85rem; color: #94a3b8; }
+-                    #pf-lookthrough-zone .lt-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; }
+-                    #pf-lookthrough-zone .lt-table { width: 100%; font-size: 0.78rem; }
+-                    #pf-lookthrough-zone .lt-table td, #pf-lookthrough-zone .lt-table th { padding: 4px 6px; vertical-align: top; }
+-                    #pf-lookthrough-zone .num { text-align: right; font-variant-numeric: tabular-nums; }
+-                    #pf-lookthrough-zone small, #pf-lookthrough-zone .lt-sub { color: #64748b; font-size: 0.72rem; }
+-                    #pf-lookthrough-zone .lt-overlap b { color: #f59e0b; font-weight: 600; }
+-                    #pf-lookthrough-zone .lt-warn { color: #f87171; }
+-                    #pf-lookthrough-zone .lt-banner { padding: 8px 10px; border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.08); font-size: 0.78rem; margin-bottom: 8px; }
+-                    #pf-lookthrough-zone .lt-note { color: #64748b; font-size: 0.72rem; margin-top: 6px; }
+-                    #pf-lookthrough-zone .lt-unknown { font-size: 0.78rem; color: #fbbf24; padding-left: 18px; }
+-                    #pf-lookthrough-zone [data-unknown="1"] .slip-kpi-value { color: #fbbf24; }
+-                    @media (max-width: 900px) { #pf-lookthrough-zone .lt-grid { grid-template-columns: 1fr; } }
+-                </style>
+                 <div class="pf-panel-header pf-collapsible-header" data-toggle="lookthrough-body">
+-                    <h3>🧩 穿透暴露与压力情景 <span class="pf-panel-sub">ETF 成分 + 直接持股 → 公司/行业 · 未知单列 · 条件估计非预测</span></h3>
+-                    <span class="pf-collapse-arrow pf-arrow-open">▶</span>
++                    <h3>穿透暴露与压力情景 <span class="pf-panel-sub">ETF 成分 + 直接持股 → 公司 / 行业 · 未知单列 · 压力情景为条件估计</span></h3>
++                    <span class="pf-collapse-arrow pf-arrow-open" aria-hidden="true"></span>
+                 </div>
+                 <div class="pf-collapsible-body pf-expanded" id="lookthrough-body">
+                     <div id="lt-compliance" class="lt-compliance"></div>
+@@ -178,39 +164,15 @@
+ 
+             <!-- ═══ ZONE 4: 决定记录与复盘 (2026-11-03 P4 上移) (方案 B 阶段4B-2; 只记录与复盘, 不下单) ═══ -->
+             <div class="glass-panel pf-brinson-panel pf-panel-collapsed" id="pf-decision-zone">
+-                <style>
+-                    #pf-decision-zone h4 { margin: 14px 0 6px; font-size: 0.85rem; color: #94a3b8; }
+-                    #pf-decision-zone .dr-table { width: 100%; font-size: 0.78rem; }
+-                    #pf-decision-zone .dr-table td, #pf-decision-zone .dr-table th { padding: 4px 6px; vertical-align: top; }
+-                    #pf-decision-zone .num { text-align: right; font-variant-numeric: tabular-nums; }
+-                    #pf-decision-zone .dr-sub, #pf-decision-zone .dr-meta, #pf-decision-zone .dr-note { color: #64748b; font-size: 0.72rem; }
+-                    #pf-decision-zone .dr-meta { margin: 4px 0 6px; }
+-                    #pf-decision-zone .dr-pos { color: #34d399; }
+-                    #pf-decision-zone .dr-neg { color: #f87171; }
+-                    #pf-decision-zone .dr-insufficient, #pf-decision-zone .dr-banner { padding: 8px 10px; border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.08); font-size: 0.78rem; margin: 6px 0; }
+-                    #pf-decision-zone .dr-insufficient-inline, #pf-decision-zone .dr-hypo, #pf-decision-zone .dr-retro { color: #fbbf24; font-size: 0.72rem; }
+-                    #pf-decision-zone .dr-caveats { font-size: 0.72rem; color: #94a3b8; padding-left: 18px; margin: 6px 0; }
+-                    #pf-decision-zone .dr-kpi { font-size: 0.8rem; margin: 6px 0; }
+-                    #pf-decision-zone .dr-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; font-size: 0.78rem; }
+-                    #pf-decision-zone .dr-form label { display: flex; flex-direction: column; gap: 3px; color: #94a3b8; }
+-                    #pf-decision-zone .dr-form .dr-wide { grid-column: span 2; }
+-                    #pf-decision-zone .dr-form textarea { min-height: 54px; resize: vertical; }
+-                    #pf-decision-zone .dr-cand ul { margin: 4px 0; padding-left: 18px; font-size: 0.75rem; }
+-                    #pf-decision-zone .dr-cand input { width: 140px; padding: 2px 6px; font-size: 0.72rem; }
+-                    #pf-decision-zone .dr-ok { color: #34d399; font-size: 0.78rem; }
+-                    #pf-decision-zone .dr-err { color: #f87171; font-size: 0.78rem; }
+-                    #pf-decision-zone .dr-thesis { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+-                    @media (max-width: 900px) { #pf-decision-zone .dr-form { grid-template-columns: 1fr 1fr; } }
+-                </style>
+                 <div class="pf-panel-header pf-collapsible-header" data-toggle="decision-body">
+-                    <h3>📝 决定记录与复盘 <span class="pf-panel-sub">采用/未采用/暂不行动 · 成交须人工关联 · 不足以评价不出数字</span></h3>
+-                    <span class="pf-collapse-arrow">▶</span>
++                    <h3>决定记录与复盘 <span class="pf-panel-sub">采用 / 未采用 / 暂不行动 · 成交须人工关联 · 不足以评价不出数字</span></h3>
++                    <span class="pf-collapse-arrow" aria-hidden="true"></span>
+                 </div>
+                 <div class="pf-collapsible-body" id="decision-body">
+                     <label class="dr-sub"><input type="checkbox" id="dr-show-amounts"> 显示金额</label>
+                     <h4>组合区间比较 (实际操作 / 维持期初组合 / 每月再平衡)</h4>
+-                    <div class="dr-sub">起点 <input type="date" id="dr-start" class="pf-input" style="width:150px;padding:2px 6px;">
+-                        <button class="slip-refresh-btn" id="dr-start-btn">计算</button> (留空 = 成交台账最早可用起点)</div>
++                    <div class="dr-sub">起点 <input type="date" id="dr-start" class="pf-input dr-start-input">
++                        <button class="pf-btn pf-btn-sm" id="dr-start-btn">计算</button> 留空 = 成交台账最早可用起点</div>
+                     <div id="dr-portfolio"><div class="pf-empty">加载中…</div></div>
+ 
+                     <h4>记录一个决定</h4>
+@@ -228,7 +190,7 @@
+                         <label>复盘日<input name="review_after" type="date" class="pf-input"></label>
+                         <label>决定日 (留空 = 今天)<input name="decided_on" type="date" class="pf-input"></label>
+                         <label>&nbsp;<span><input type="checkbox" name="retrospective"> 事后补记</span></label>
+-                        <div class="dr-wide"><button type="submit" class="slip-refresh-btn">记录</button>
++                        <div class="dr-wide"><button type="submit" class="pf-btn pf-btn-sm">记录</button>
+                             <span id="dr-msg"></span></div>
+                     </form>
+ 
+@@ -536,8 +498,8 @@
+             <!-- ═══ 成交记录 (2026-11-03 P4: 改读成交台账 /portfolio/trades, 默认折叠) ═══ -->
+             <div class="glass-panel pf-history-panel">
+                 <div class="pf-panel-header pf-collapsible-header" id="history-toggle">
+-                    <h3>📜 成交记录 <span class="pf-panel-sub">成交台账（导入的交割单 / 历史成交）· 最近 50 笔</span> <span class="pf-pos-count" id="trade-ledger-count"></span></h3>
+-                    <span class="pf-collapse-arrow" id="history-arrow">▶</span>
++                    <h3>成交记录 <span class="pf-panel-sub">成交台账（导入的交割单 / 历史成交）· 最近 50 笔</span> <span class="pf-pos-count" id="trade-ledger-count"></span></h3>
++                    <span class="pf-collapse-arrow" id="history-arrow" aria-hidden="true"></span>
+                 </div>
+                 <div class="pf-history-list pf-collapsible-body" id="trade-history-list" style="display:none;">
+                 </div>
+@@ -591,17 +553,15 @@
+ 
+     <!-- ═══ 导入持仓弹窗 ═══ -->
+     <div class="pf-modal-overlay" id="import-modal">
+-        <div class="pf-modal" style="width: 640px;">
++        <div class="pf-modal">
+             <div class="pf-modal-header">
+-                <h3 class="pf-modal-title">📥 导入持仓数据</h3>
+-                <span class="pf-modal-badge">TXT → SYSTEM</span>
++                <h3 class="pf-modal-title">导入持仓</h3>
+             </div>
+ 
+             <!-- 文件拖放区 -->
+             <div class="pf-import-dropzone" id="import-dropzone">
+-                <div class="pf-dropzone-icon">📄</div>
+                 <div class="pf-dropzone-text">拖拽 <strong>资金股份查询.txt</strong> 到此处</div>
+-                <div class="pf-dropzone-hint">或点击选择文件 · 支持通达信/同花顺/东方财富导出格式</div>
++                <div class="pf-dropzone-hint">或点击选择文件 · 支持通达信 / 同花顺 / 东方财富导出格式</div>
+             </div>
+ 
+             <!-- 预览区域（选文件后显示） -->
+@@ -639,13 +599,13 @@
+ 
+             <!-- 警告提示 -->
+             <div class="pf-import-warning" id="import-warning" style="display:none;">
+-                ⚠️ 确认导入将<strong>覆盖</strong>当前所有持仓数据，此操作不可撤销
++                确认导入将<strong>覆盖</strong>当前所有持仓数据，此操作不可撤销
+             </div>
+ 
+             <div class="pf-modal-actions">
+-                <button class="pf-btn-buy" id="import-confirm-btn" style="display:none;">✅ 确认导入</button>
++                <button class="pf-btn pf-btn-primary" id="import-confirm-btn" style="display:none;">确认导入</button>
+             </div>
+-            <button class="pf-btn-cancel" id="import-close-btn">取消并返回 CANCEL</button>
++            <button class="pf-btn pf-btn-cancel" id="import-close-btn">取消</button>
+         </div>
+     </div>
+ 
+@@ -672,9 +632,9 @@
+     <script src="./static/js/portfolio_modules.js?v=1"></script>
+     <script src="./static/js/portfolio_compliance.js?v=2"></script>
+     <script src="./static/js/portfolio_kpis.js?v=3"></script>
+-    <script src="./static/js/portfolio_manager.js?v=51"></script>
+-    <script src="./static/js/lookthrough_panel.js?v=2"></script>
+-    <script src="./static/js/decision_review_panel.js?v=2"></script>
++    <script src="./static/js/portfolio_manager.js?v=52"></script>
++    <script src="./static/js/lookthrough_panel.js?v=3"></script>
++    <script src="./static/js/decision_review_panel.js?v=3"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+ <script src="./static/js/authority_banner.js?v=1"></script><!-- 2026-11-04 非权威环境标注 (服务器不显示) -->
+ </body>
+diff --git a/quant_dashboard/static/css/portfolio.css b/quant_dashboard/static/css/portfolio.css
+index 3384b19..fe1b3f5 100644
+--- a/quant_dashboard/static/css/portfolio.css
++++ b/quant_dashboard/static/css/portfolio.css
+@@ -1,1200 +1,814 @@
+ /* ================================================
+-   AlphaCore · 投资组合 V2.0 — Premium Visual System
++   AlphaCore · 投资组合 (portfolio.html)
++   2026-11-04 视觉轮 (docs/PORTFOLIO_SLIMMING_PLAN.md 第 10 节)
++   - 颜色只用 ac_tokens.css 的 var(--…); 本文件不定义色值变量。
++   - 可见模块: 实底 + 1px 线 + 6px 圆角 + 无阴影; 无渐变、毛玻璃、发光、循环 / 入场动画、hover 位移。
++   - 涨跌色 (.ac-up / .ac-down) 只用于实际涨跌与盈亏; 状态色只来自合规、回撤刹车等已有结果, 且必带文字标签。
++   - 文件末尾"隐藏模块"一节为 config/portfolio_modules.json 关闭模块的原样式, 本轮不做视觉处理。
+    ================================================ */
+ 
+-/* ====== 主容器 ====== */
++/* ═══════════ 视觉轮 · 可见模块 (VISIBLE-START) ═══════════ */
++
++/* ── 页面 ── */
+ .pf-content {
+     display: flex;
+     flex-direction: column;
+-    gap: 22px;
++    gap: 16px;
+     padding-bottom: 80px;
++    color: var(--dc-text);
++    font-variant-numeric: tabular-nums;
+ }
+-
+-/* ====== LIVE 状态徽章 ====== */
+-.pf-live-badge {
+-    display: inline-flex;
+-    align-items: center;
+-    gap: 4px;
+-    padding: 5px 14px;
+-    background: rgba(16, 185, 129, 0.12);
+-    border: 1px solid rgba(16, 185, 129, 0.3);
+-    border-radius: 20px;
+-    font-size: 0.72rem;
+-    font-weight: 700;
+-    color: #34d399;
+-    letter-spacing: 1.5px;
+-    animation: pf-pulse 2s ease-in-out infinite;
+-}
+-
+-@keyframes pf-pulse {
+-    0%, 100% { opacity: 1; }
+-    50% { opacity: 0.5; }
+-}
+-
+-/* ═══════════════════════════════════
+-   ZONE 1: Hero — 核心数据区
+-   ═══════════════════════════════════ */
+-
+-.pf-hero {
+-    position: relative;
+-    padding: 36px 40px 30px;
+-    overflow: hidden;
+-    border-radius: 18px !important;
+-    background: linear-gradient(145deg,
+-        rgba(99, 102, 241, 0.08) 0%,
+-        rgba(15, 23, 42, 0.4) 40%,
+-        rgba(59, 130, 246, 0.06) 100%
+-    );
+-    border: 1px solid rgba(99, 102, 241, 0.15) !important;
+-}
+-
+-.pf-hero::before {
+-    content: '';
+-    position: absolute;
+-    top: 0; left: 0; right: 0;
+-    height: 3px;
+-    background: linear-gradient(90deg, #6366f1, #3b82f6, #06b6d4, #6366f1);
+-    background-size: 300% 100%;
+-    animation: pf-hero-beam 4s ease infinite;
+-}
+-
+-@keyframes pf-hero-beam {
+-    0%, 100% { background-position: 0% 50%; }
+-    50% { background-position: 100% 50%; }
+-}
+-
+-/* Hero 主区域（总资产 + Sparkline） */
+-.pf-hero-main {
++.pf-content .glass-panel,
++.pf-hero,
++.pf-positions-panel,
++.pf-history-panel {
++    background: var(--dc-surface) !important;
++    border: 1px solid var(--dc-line) !important;
++    border-radius: var(--dc-radius) !important;
++    box-shadow: none !important;
++    backdrop-filter: none !important;
++    -webkit-backdrop-filter: none !important;
++    animation: none !important;
++    transform: none !important;
++    transition: none !important;
++    padding: 18px 20px !important;
++}
++.pf-content .glass-panel:hover { transform: none !important; border-color: var(--dc-line) !important; }
++
++/* 标题三级: 页面标题 / 区块标题 / 说明行 */
++.topbar .welcome-box h2,
++.pf-title h2 { font-size: 1.25rem; font-weight: 600; color: var(--dc-text); margin: 0; letter-spacing: 0; text-shadow: none; }
++.pf-panel-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+-    margin-bottom: 28px;
++    gap: 12px;
++    margin-bottom: 12px;
+ }
+-
+-.pf-hero-label {
+-    font-size: 0.72rem;
+-    color: #94a3b8;
+-    font-weight: 700;
+-    letter-spacing: 2px;
+-    text-transform: uppercase;
+-    margin-bottom: 6px;
++.pf-panel-header h3 {
++    display: flex;
++    flex-wrap: wrap;
++    align-items: baseline;
++    gap: 4px 10px;
++    margin: 0;
++    font-size: 0.95rem;
++    font-weight: 600;
++    color: var(--dc-text);
+ }
+-
+-.pf-hero-nav {
+-    font-size: 2.6rem;
+-    font-weight: 900;
+-    font-family: 'Outfit', sans-serif;
+-    letter-spacing: -1px;
+-    background: linear-gradient(120deg, #ffffff 30%, #a5b4fc 60%, #818cf8);
+-    -webkit-background-clip: text;
+-    -webkit-text-fill-color: transparent;
+-    background-clip: text;
+-    line-height: 1.1;
++.pf-panel-header h3::before, .pf-content h3::before, .pf-content h4::before, #import-modal h3::before { display: none; content: none; }
++.pf-panel-sub {
++    font-size: 0.7rem;
++    font-weight: 400;
++    color: var(--dc-text-muted);
+ }
+-
+-.pf-hero-sub {
+-    font-size: 0.85rem;
+-    color: #64748b;
+-    margin-top: 6px;
++.pf-pos-count {
++    font-size: 0.7rem;
+     font-weight: 500;
++    color: var(--dc-text-muted);
++    padding: 0;
++    background: transparent;
++    border: 0;
+ }
+-
+-.pf-sparkline-container {
+-    opacity: 0.8;
+-    transition: opacity 0.3s;
++.pf-empty, .pf-table-empty, .pf-history-empty {
++    color: var(--dc-text-muted);
++    font-size: 0.78rem;
++    text-align: center;
++    padding: 20px 8px !important;
+ }
+ 
+-.pf-sparkline-container:hover {
++/* ── 语义色 ── */
++.ac-up   { color: var(--mkt-up) !important; }
++.ac-down { color: var(--mkt-down) !important; }
++.ac-flat { color: var(--dc-text-2) !important; }
++.pf-muted { color: var(--dc-text-muted); }
++
++/* ── 按钮 ── */
++.pf-btn,
++.topbar .btn-import,
++.topbar .btn-sync {
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 6px;
++    height: 32px;
++    padding: 0 14px;
++    border-radius: var(--dc-radius);
++    font-size: 0.8rem;
++    font-weight: 600;
++    line-height: 1;
++    white-space: nowrap;
++    cursor: pointer;
++    background: transparent;
++    color: var(--dc-text-2);
++    border: 1px solid var(--dc-line-strong);
++    box-shadow: none;
++    text-shadow: none;
++    transform: none;
++    transition: border-color 0.15s, background-color 0.15s, color 0.15s;
++    animation: none;
++}
++/* 主按钮 (全页唯一实色): 导入持仓 */
++.topbar .btn-import,
++.pf-btn-primary {
++    background: var(--dc-text);
++    color: var(--dc-surface);
++    border-color: var(--dc-text);
++}
++.topbar .btn-import:hover,
++.pf-btn-primary:hover { background: var(--dc-text-2); border-color: var(--dc-text-2); }
++.topbar .btn-sync:hover,
++.pf-btn:not(.pf-btn-primary):hover { border-color: var(--dc-text-muted); color: var(--dc-text); background: var(--dc-surface-2); }
++.pf-btn-sm { height: 26px; padding: 0 10px; font-size: 0.72rem; }
++/* 不可用 (本机非权威 / 同步中 / 未填估值时点): 中性虚线 + "不可用", 不用阻断色 */
++.topbar .btn.ac-write-locked,
++.topbar .btn.ac-write-locked:hover,
++.pf-btn:disabled,
++.pf-btn:disabled:hover,
++.topbar .btn-sync:disabled {
++    background: transparent !important;
++    color: var(--dc-text-subtle) !important;
++    border: 1px dashed var(--dc-line-strong) !important;
++    cursor: not-allowed;
+     opacity: 1;
++    transform: none;
++    box-shadow: none;
+ }
+-
+-/* Hero 6 卡片网格 */
+-.pf-hero-cards {
+-    display: grid;
+-    grid-template-columns: repeat(6, 1fr);
+-    gap: 12px;
++.topbar .btn.ac-write-locked::after { content: "不可用"; margin-left: 6px; font-size: 0.65rem; font-weight: 500; }
++.pf-authority-note {
++    font-size: 0.72rem;
++    font-weight: 600;
++    color: var(--status-block);
++    white-space: nowrap;
+ }
+ 
++/* ── 合规徽章: 状态只来自合规引擎, 必带文字 ── */
++a.pf-compliance-dot { text-decoration: none; cursor: pointer; }
++.pf-compliance-dot {
++    display: inline-flex;
++    align-items: baseline;
++    gap: 6px;
++    padding: 4px 10px;
++    border-radius: 4px;
++    font-size: 0.72rem;
++    font-weight: 700;
++    line-height: 1.4;
++    border: 1px solid var(--dc-line-strong);
++    background: transparent;
++    color: var(--dc-text-2);
++    animation: none;
++    transition: none;
++}
++.pf-compliance-block { background: var(--status-block); border-color: var(--status-block); color: var(--status-block-text); }
++.pf-compliance-warn  { border-color: var(--status-warn); color: var(--status-warn); }
++.pf-compliance-ok    { border-color: var(--status-pass); color: var(--status-pass); }
++.pf-compliance-unknown { border-color: var(--dc-line-strong); color: var(--status-info); }
++.pf-compliance-time, .pf-compliance-note { font-weight: 400; font-size: 0.65rem; opacity: 0.85; }
++.pf-compliance-time:empty, .pf-compliance-note:empty { display: none; }
++
++/* ── 核心资产区 ── */
++.pf-hero-main { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
++.pf-hero-label { font-size: 0.72rem; font-weight: 500; color: var(--dc-text-muted); margin-bottom: 4px; letter-spacing: 0; text-transform: none; }
++.pf-hero-nav {
++    font-size: 2rem;
++    font-weight: 700;
++    line-height: 1.15;
++    color: var(--dc-text);
++    background: none;
++    -webkit-text-fill-color: currentColor;
++    letter-spacing: 0;
++    font-variant-numeric: tabular-nums;
++}
++.pf-hero-sub { font-size: 0.8rem; color: var(--dc-text-2); margin-top: 4px; font-weight: 400; }
++.pf-hero-sub b, .pf-hero-sub strong { color: var(--dc-text); font-weight: 600; }
++.pf-hero-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+ .pf-kpi-card {
+     display: flex;
+     flex-direction: column;
+-    gap: 6px;
+-    padding: 16px 18px;
+-    background: rgba(0, 0, 0, 0.3);
+-    border-radius: 12px;
+-    border: 1px solid rgba(255, 255, 255, 0.04);
+-    backdrop-filter: blur(10px);
+-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+-}
+-
+-.pf-kpi-card:hover {
+-    background: rgba(255, 255, 255, 0.04);
+-    border-color: rgba(99, 102, 241, 0.2);
+-    box-shadow: 0 0 24px rgba(99, 102, 241, 0.08);
+-    transform: translateY(-2px);
+-}
+-
+-.pf-kpi-label {
+-    font-size: 0.7rem;
+-    color: #64748b;
+-    font-weight: 700;
+-    text-transform: uppercase;
+-    letter-spacing: 0.8px;
++    gap: 4px;
++    min-width: 0;
++    padding: 10px 12px;
++    background: var(--dc-surface-2);
++    border: 1px solid var(--dc-line);
++    border-radius: var(--dc-radius);
++    box-shadow: none;
++    backdrop-filter: none;
++    transform: none;
++    transition: none;
+ }
+-
++.pf-kpi-label { font-size: 0.7rem; font-weight: 500; color: var(--dc-text-muted); letter-spacing: 0; text-transform: none; }
+ .pf-kpi-value {
+-    font-size: 1.25rem;
++    font-size: 1.15rem;
+     font-weight: 700;
+-    font-family: 'Outfit', sans-serif;
+-    color: #e2e8f0;
+-}
+-
+-/* 颜色类 */
+-.pf-up { color: #10b981 !important; }
+-.pf-danger { color: #ef4444 !important; }
+-.pf-gold { color: #fbbf24 !important; }
+-.pf-accent { color: #6366f1 !important; }
+-.pf-dim { color: #94a3b8 !important; }
+-
+-/* ═══════════════════════════════════
+-   ZONE 2: 持仓监控表
+-   ═══════════════════════════════════ */
+-
+-.pf-positions-panel {
+-    border-radius: 18px !important;
+-    padding: 28px 32px !important;
+-}
+-
+-.pf-panel-header {
+-    display: flex;
+-    justify-content: space-between;
+-    align-items: center;
+-    margin-bottom: 22px;
++    color: var(--dc-text);
++    white-space: nowrap;
++    font-variant-numeric: tabular-nums;
+ }
++.pf-kpi-sub { display: block; font-size: 0.65rem; color: var(--dc-text-muted); line-height: 1.45; }
++.pf-kpi-sub:empty { display: none; }
+ 
+-.pf-panel-header h3 {
+-    font-size: 1.1rem;
+-    font-weight: 700;
++/* ── 告警条: 合规原文 + 来源; 阻断 = 实底 + 左线 + 文字标签 ── */
++.pf-alert-strip { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
++.pf-alert-strip:empty { display: none; }
++.pf-alert-item {
+     display: flex;
+-    align-items: center;
++    align-items: flex-start;
+     gap: 10px;
+-    margin: 0;
+-}
+-
+-.pf-panel-sub {
+-    font-size: 0.72rem;
+-    color: #64748b;
+-    font-weight: 500;
+-    font-family: 'Outfit';
+-}
+-
+-.pf-pos-count {
++    padding: 8px 12px;
++    border-radius: var(--dc-radius);
++    border: 1px solid var(--dc-line);
++    border-left: 3px solid var(--status-info);
++    background: var(--dc-surface-2);
++    color: var(--dc-text-2);
+     font-size: 0.78rem;
+-    padding: 5px 14px;
+-    background: rgba(99, 102, 241, 0.1);
+-    border: 1px solid rgba(99, 102, 241, 0.2);
+-    border-radius: 20px;
+-    color: #a5b4fc;
+-    font-weight: 600;
+-}
+-
+-/* 表格 */
+-.pf-table-wrap {
+-    overflow-x: auto;
++    line-height: 1.5;
++    animation: none;
+ }
++.pf-alert-block { background: var(--status-block-surface); border-left-color: var(--status-block); color: var(--dc-text); }
++.pf-alert-block .pf-alert-detail { font-weight: 600; }
++.pf-alert-warn  { background: var(--status-warn-surface); border-left-color: var(--status-warn); }
++.pf-alert-info  { border-left-color: var(--status-info); }
++.pf-alert-icon {
++    flex: none;
++    display: inline-flex;
++    padding: 0 6px;
++    border-radius: 4px;
++    font-size: 0.62rem;
++    font-weight: 700;
++    line-height: 1.6;
++    border: 1px solid var(--dc-line-strong);
++    color: var(--status-info);
++    animation: none;
++}
++.pf-alert-block .pf-alert-icon { background: var(--status-block); border-color: var(--status-block); color: var(--status-block-text); }
++.pf-alert-warn .pf-alert-icon  { border-color: var(--status-warn); color: var(--status-warn); }
++.pf-alert-body { flex: 1; min-width: 0; }
++.pf-alert-title { font-weight: 700; margin-right: 6px; color: var(--dc-text); }
++.pf-alert-detail { color: var(--dc-text-2); }
++.pf-alert-source { font-size: 0.65rem; color: var(--dc-text-muted); padding: 0 2px; }
++.pf-alert-source a { color: inherit; }
+ 
++/* ── 表格 ── */
++.pf-table-wrap { overflow-x: auto; }
+ .pf-table {
+     width: 100%;
+-    border-collapse: separate;
+-    border-spacing: 0 4px;
+-    font-size: 0.88rem;
++    border-collapse: collapse;
++    border-spacing: 0;
++    font-size: 0.8rem;
++    color: var(--dc-text-2);
++    font-variant-numeric: tabular-nums;
+ }
+-
+ .pf-table thead th {
+     text-align: left;
+-    padding: 10px 14px;
+-    color: #64748b;
+-    font-weight: 600;
+-    font-size: 0.72rem;
+-    text-transform: uppercase;
+-    letter-spacing: 0.8px;
+-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+-}
+-
+-.pf-table tbody tr {
+-    transition: all 0.25s ease;
+-}
+-
+-.pf-table tbody tr:hover {
+-    background: rgba(99, 102, 241, 0.04);
+-    transform: scale(1.002);
+-}
+-
+-.pf-table tbody td {
+-    padding: 14px 14px;
+-    vertical-align: middle;
+-}
+-
+-.pf-table-empty {
+-    text-align: center;
+-    color: #475569;
+-    padding: 50px !important;
+-    font-size: 0.9rem;
+-}
+-
+-/* 表格单元格样式 */
+-.pf-code-cell {
+-    display: flex;
+-    align-items: baseline;
+-    gap: 3px;
+-}
+-
+-.pf-code-num {
+-    font-weight: 700;
+-    color: #fff;
+-    font-size: 1.02rem;
+-    font-family: 'Outfit';
+-}
+-
+-.pf-code-ext {
++    padding: 6px 10px;
+     font-size: 0.68rem;
+-    color: #475569;
+-    font-family: 'Inter';
+-}
+-
+-.pf-name-cell {
+-    font-weight: 600;
+-    color: #e2e8f0;
+-    margin-bottom: 4px;
+-    font-size: 0.92rem;
+-}
+-
+-.pf-sector-tag {
+-    display: inline-block;
+-    padding: 3px 10px;
+-    background: rgba(255, 255, 255, 0.06);
+-    color: #94a3b8;
+-    border-radius: 5px;
+-    font-size: 0.72rem;
+-    font-weight: 600;
+-    letter-spacing: 0.3px;
++    font-weight: 500;
++    color: var(--dc-text-muted);
++    letter-spacing: 0;
++    text-transform: none;
++    border-bottom: 1px solid var(--dc-line);
++    white-space: nowrap;
+ }
+-
+-.pf-mono {
+-    font-family: 'Outfit', monospace;
+-    font-variant-numeric: tabular-nums;
+-    color: #e2e8f0;
++.pf-table tbody td { padding: 7px 10px; vertical-align: middle; border-bottom: 1px solid var(--dc-line); }
++.pf-table tbody tr { transition: none; }
++.pf-table tbody tr:hover { background: var(--dc-surface-2); transform: none; }
++.pf-table .num, .pf-table th.num { text-align: right; }
++.pf-code-cell { display: flex; align-items: baseline; gap: 2px; }
++.pf-code-num { font-weight: 600; color: var(--dc-text); font-size: 0.82rem; }
++.pf-code-ext { font-size: 0.65rem; color: var(--dc-text-subtle); }
++.pf-name-cell { font-weight: 600; color: var(--dc-text); font-size: 0.82rem; margin-bottom: 2px; }
++.pf-sector-tag { display: inline-block; padding: 0; background: transparent; color: var(--dc-text-muted); font-size: 0.68rem; font-weight: 400; }
++.pf-mono { font-variant-numeric: tabular-nums; color: var(--dc-text-2); }
++.pf-dim { color: var(--dc-text-muted); }
++.pf-weight-cell { display: flex; flex-direction: column; gap: 3px; min-width: 72px; }
++.pf-weight-num { font-size: 0.78rem; font-weight: 600; color: var(--dc-text); }
++.pf-weight-bar { height: 4px; background: var(--dc-track); border-radius: 2px; overflow: hidden; }
++.pf-weight-fill { height: 100%; background: var(--dc-data); border-radius: 2px; transition: none; }
++.pf-pnl-cell { white-space: nowrap; }
++.pf-pnl-val { display: block; font-weight: 600; }
++.pf-pnl-pct { display: block; font-size: 0.7rem; }
++
++/* 价格来源标签: 成本价兜底 = warn (市值与盈亏不真实); 券商 / TS = info 小字 */
++.pf-src-tag { display: inline-block; margin-left: 4px; font-size: 0.6rem; font-weight: 500; vertical-align: middle; color: var(--dc-text-subtle); }
++.pf-src-cost { padding: 0 5px; border: 1px solid var(--status-warn); border-radius: 4px; color: var(--status-warn); font-weight: 700; }
++
++/* ── 折叠区: chevron, 整行可点 ── */
++.pf-collapsible-header { cursor: pointer; user-select: none; margin-bottom: 0; }
++.pf-collapsible-header:hover h3 { color: var(--dc-text); }
++.pf-collapse-arrow {
++    display: inline-flex;
++    width: 16px;
++    height: 16px;
++    flex: none;
++    color: var(--dc-text-muted);
++    font-size: 0;
++    transition: transform 0.15s;
++}
++.pf-collapse-arrow::before {
++    content: "";
++    width: 7px;
++    height: 7px;
++    margin: 3px 0 0 3px;
++    border-right: 1.5px solid currentColor;
++    border-bottom: 1.5px solid currentColor;
++    transform: rotate(-45deg);
++}
++.pf-collapse-arrow.pf-arrow-open { transform: rotate(90deg); color: var(--dc-text-2); }
++.pf-collapsible-body { overflow: hidden; max-height: 0; opacity: 1; transition: none; }
++.pf-collapsible-body.pf-expanded { max-height: none; margin-top: 12px; }
++#trade-history-list.pf-collapsible-body { max-height: none; margin-top: 12px; }
++.pf-panel-collapsed .pf-panel-header { margin-bottom: 0; }
++
++/* ── 表单控件 (决定记录、导入弹窗) ── */
++.pf-input {
++    box-sizing: border-box;
++    width: 100%;
++    height: 30px;
++    padding: 0 8px;
++    border-radius: 4px;
++    border: 1px solid var(--dc-line-strong);
++    background: var(--dc-surface-2);
++    color: var(--dc-text);
++    font-size: 0.78rem;
++    font-family: inherit;
++    transition: none;
+ }
++textarea.pf-input { height: auto; padding: 6px 8px; }
++.pf-input:focus { outline: none; border-color: var(--dc-text-muted); box-shadow: none; background: var(--dc-surface-2); }
+ 
+-/* 仓位占比进度条 */
+-.pf-weight-cell {
++/* ── 成交记录 ── */
++.pf-history-list { display: flex; flex-direction: column; gap: 0; max-height: 360px; overflow-y: auto; }
++.pf-history-item {
+     display: flex;
+-    flex-direction: column;
+-    gap: 4px;
+-    min-width: 80px;
++    align-items: center;
++    gap: 12px;
++    padding: 7px 4px;
++    border-bottom: 1px solid var(--dc-line);
++    background: transparent;
++    border-radius: 0;
++    transition: none;
++}
++.pf-history-item:hover { background: var(--dc-surface-2); }
++.pf-hist-body { flex: 1; min-width: 0; }
++.pf-hist-title { font-size: 0.8rem; font-weight: 600; color: var(--dc-text); }
++.pf-hist-title strong { margin-right: 4px; font-weight: 600; }
++.pf-hist-code { font-size: 0.68rem; color: var(--dc-text-subtle); margin-left: 4px; }
++.pf-hist-detail { font-size: 0.72rem; color: var(--dc-text-muted); }
++.pf-hist-meta { flex: none; }
++.pf-hist-time { font-size: 0.68rem; color: var(--dc-text-muted); }
++
++/* ── Toast ── */
++.pf-toast-container { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
++.pf-toast {
++    display: flex;
++    align-items: center;
++    gap: 8px;
++    max-width: 420px;
++    padding: 10px 14px;
++    border-radius: var(--dc-radius);
++    border: 1px solid var(--dc-line-strong);
++    border-left: 3px solid var(--status-info);
++    background: var(--dc-surface);
++    color: var(--dc-text);
++    font-size: 0.8rem;
++    box-shadow: none;
++    backdrop-filter: none;
++    pointer-events: auto;
++    opacity: 0;
++    transition: opacity 0.2s;
+ }
++.pf-toast-show { opacity: 1; }
++.pf-toast-hide { opacity: 0; }
++.pf-toast-success { border-left-color: var(--status-pass); }
++.pf-toast-warning { border-left-color: var(--status-warn); }
++.pf-toast-error   { border-left-color: var(--status-fail); }
++.pf-toast-icon { flex: none; font-size: 0.65rem; font-weight: 700; color: var(--dc-text-muted); }
+ 
+-.pf-weight-num {
+-    font-size: 0.82rem;
+-    font-weight: 700;
+-    font-family: 'Outfit';
+-    color: #e2e8f0;
++/* ── 导入弹窗 ── */
++#import-modal.pf-modal-overlay {
++    position: fixed;
++    inset: 0;
++    display: none;
++    justify-content: center;
++    align-items: center;
++    z-index: 1001;
++    background: color-mix(in srgb, var(--dc-surface) 82%, transparent);
+ }
+-
+-.pf-weight-bar {
+-    height: 4px;
+-    background: rgba(255, 255, 255, 0.06);
+-    border-radius: 4px;
+-    overflow: hidden;
+-}
+-
+-.pf-weight-fill {
+-    height: 100%;
+-    border-radius: 4px;
+-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+-}
+-
+-/* PnL 单元格 */
+-.pf-pnl-cell {
+-    font-family: 'Outfit', sans-serif;
+-}
+-
+-.pf-pnl-val {
+-    display: block;
+-    font-weight: 700;
+-    font-size: 1rem;
+-}
+-
+-.pf-pnl-pct {
+-    display: block;
+-    font-size: 0.72rem;
+-    font-weight: 500;
+-    opacity: 0.75;
+-}
+-
+-/* 调整仓位按钮 */
+-.pf-btn-adjust {
+-    padding: 7px 16px;
+-    font-size: 0.75rem;
+-    font-weight: 600;
+-    font-family: 'Inter', sans-serif;
+-    color: #94a3b8;
+-    background: transparent;
+-    border: 1px solid rgba(255, 255, 255, 0.1);
+-    border-radius: 8px;
+-    cursor: pointer;
+-    transition: all 0.25s;
+-    white-space: nowrap;
+-}
+-
+-.pf-btn-adjust:hover {
+-    color: #fff;
+-    border-color: rgba(99, 102, 241, 0.4);
+-    background: rgba(99, 102, 241, 0.1);
+-    box-shadow: 0 0 16px rgba(99, 102, 241, 0.12);
+-}
+-
+-/* ═══════════════════════════════════
+-   ZONE 3 & 4: 图表区域
+-   ═══════════════════════════════════ */
+-
+-.pf-charts-row {
+-    display: grid;
+-    grid-template-columns: 1fr 1fr;
+-    gap: 20px;
+-}
+-
+-/* 净值+Gauge 行宽度分配 */
+-.pf-chart-wide {
+-    grid-column: span 1;
+-}
+-
+-.pf-chart-narrow {
+-    grid-column: span 1;
+-}
+-
+-.pf-chart-box {
+-    padding: 26px 28px;
+-    border-radius: 18px !important;
+-    min-height: 420px;
+-}
+-
+-.pf-chart-box h4 {
+-    font-size: 1rem;
+-    font-weight: 700;
+-    color: #fff;
+-    margin: 0 0 18px 0;
+-    display: flex;
+-    align-items: center;
+-    gap: 8px;
+-}
+-
+-.pf-chart-box h4::before {
+-    content: '';
+-    display: inline-block;
+-    width: 4px;
+-    height: 16px;
+-    background: linear-gradient(180deg, #6366f1, #3b82f6);
+-    border-radius: 3px;
+-}
+-
+-.pf-chart-sub {
+-    font-size: 0.68rem;
+-    color: #475569;
+-    font-weight: 500;
+-    font-family: 'Outfit';
+-    margin-left: 4px;
+-}
+-
+-/* Gauge 网格 */
+-.pf-gauge-grid {
+-    display: grid;
+-    grid-template-columns: 1fr;
+-    gap: 0;
+-}
+-
+-/* ═══════════════════════════════════
+-   ZONE 5: 交易记录面板
+-   ═══════════════════════════════════ */
+-
+-.pf-history-panel {
+-    border-radius: 18px !important;
+-    padding: 26px 28px !important;
+-}
+-
+-.pf-history-list {
+-    display: flex;
+-    flex-direction: column;
+-    gap: 6px;
+-    max-height: 320px;
++#import-modal .pf-modal {
++    width: 640px;
++    max-width: calc(100vw - 32px);
++    max-height: calc(100vh - 32px);
+     overflow-y: auto;
+-    padding-right: 6px;
+-}
+-
+-/* 自定义滚动条 */
+-.pf-history-list::-webkit-scrollbar {
+-    width: 5px;
+-}
+-
+-.pf-history-list::-webkit-scrollbar-track {
+-    background: transparent;
+-}
+-
+-.pf-history-list::-webkit-scrollbar-thumb {
+-    background: rgba(255, 255, 255, 0.08);
+-    border-radius: 6px;
+-}
+-
+-.pf-history-empty {
+-    text-align: center;
+-    color: #475569;
+-    padding: 40px;
+-    font-size: 0.88rem;
+-}
+-
+-.pf-history-item {
+-    display: flex;
+-    align-items: center;
+-    gap: 14px;
+-    padding: 14px 18px;
+-    background: rgba(0, 0, 0, 0.15);
+-    border-radius: 12px;
+-    border: 1px solid rgba(255, 255, 255, 0.03);
+-    transition: all 0.2s;
+-}
+-
+-.pf-history-item:hover {
+-    background: rgba(255, 255, 255, 0.03);
+-    border-color: rgba(255, 255, 255, 0.06);
+-}
+-
+-.pf-hist-icon {
+-    font-size: 1.1rem;
+-    flex-shrink: 0;
+-}
+-
+-.pf-hist-body {
+-    flex: 1;
+-    min-width: 0;
+-}
+-
+-.pf-hist-title {
+-    font-size: 0.88rem;
+-    font-weight: 600;
+-    color: #e2e8f0;
+-    margin-bottom: 2px;
+-}
+-
+-.pf-hist-title strong {
+-    margin-right: 4px;
+-}
+-
+-.pf-hist-code {
+-    font-size: 0.72rem;
+-    color: #475569;
+-    font-family: 'Outfit';
+-    margin-left: 6px;
+-}
+-
+-.pf-hist-detail {
+-    font-size: 0.78rem;
+-    color: #64748b;
+-    font-family: 'Outfit';
+-}
+-
+-.pf-hist-meta {
+-    display: flex;
+-    flex-direction: column;
+-    align-items: flex-end;
+-    gap: 2px;
+-    flex-shrink: 0;
+-}
+-
+-.pf-hist-status {
+-    font-size: 0.72rem;
+-    font-weight: 600;
+-}
+-
+-.pf-hist-buy .pf-hist-status { color: #10b981; }
+-.pf-hist-sell .pf-hist-status { color: #ef4444; }
+-.pf-hist-fail .pf-hist-status { color: #64748b; }
+-
+-.pf-hist-time {
+-    font-size: 0.68rem;
+-    color: #475569;
+-    font-family: 'Outfit';
+-    font-variant-numeric: tabular-nums;
+-}
+-
+-/* ═══════════════════════════════════
+-   Toast 通知系统
+-   ═══════════════════════════════════ */
+-
+-.pf-toast-container {
+-    position: fixed;
+-    top: 24px;
+-    right: 24px;
+-    z-index: 9999;
+-    display: flex;
+-    flex-direction: column;
+-    gap: 10px;
+-    pointer-events: none;
+-}
+-
+-.pf-toast {
+-    display: flex;
+-    align-items: center;
+-    gap: 10px;
+-    padding: 14px 22px;
+-    border-radius: 12px;
+-    font-size: 0.88rem;
+-    font-weight: 600;
+-    font-family: 'Inter', sans-serif;
+-    color: #fff;
+-    backdrop-filter: blur(16px);
+-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+-    pointer-events: auto;
+-    transform: translateX(120%);
+-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+-    opacity: 0;
+-}
+-
+-.pf-toast-show {
+-    transform: translateX(0);
+-    opacity: 1;
+-}
+-
+-.pf-toast-hide {
+-    transform: translateX(120%);
+-    opacity: 0;
+-}
+-
+-.pf-toast-success {
+-    background: rgba(16, 185, 129, 0.18);
+-    border: 1px solid rgba(16, 185, 129, 0.35);
+-}
+-
+-.pf-toast-error {
+-    background: rgba(239, 68, 68, 0.18);
+-    border: 1px solid rgba(239, 68, 68, 0.35);
+-}
+-
+-.pf-toast-warning {
+-    background: rgba(245, 158, 11, 0.18);
+-    border: 1px solid rgba(245, 158, 11, 0.35);
+-}
+-
+-.pf-toast-info {
+-    background: rgba(59, 130, 246, 0.18);
+-    border: 1px solid rgba(59, 130, 246, 0.35);
+-}
+-
+-.pf-toast-icon {
+-    font-size: 1.1rem;
+-    flex-shrink: 0;
+-}
+-
+-.pf-toast-msg {
+-    flex: 1;
+-}
+-
+-/* ═══════════════════════════════════
+-   交易弹窗 V2.0
+-   ═══════════════════════════════════ */
+-
+-.pf-modal-overlay {
+-    position: fixed;
+-    top: 0; left: 0; right: 0; bottom: 0;
+-    background: rgba(0, 0, 0, 0.8);
+-    backdrop-filter: blur(12px);
+-    display: none;
+-    justify-content: center;
+-    align-items: center;
+-    z-index: 1001;
+-}
+-
+-.pf-modal {
+-    width: 500px;
+-    max-width: 90vw;
+-    padding: 40px;
+-    border: 1px solid rgba(255, 255, 255, 0.06);
+-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(99, 102, 241, 0.05);
+-    border-radius: 20px;
+-    background: linear-gradient(180deg, rgba(20, 24, 38, 0.97), rgba(15, 23, 42, 0.99));
+-    animation: pf-modal-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+-}
+-
+-@keyframes pf-modal-in {
+-    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+-    to { opacity: 1; transform: scale(1) translateY(0); }
+-}
+-
+-.pf-modal-header {
+-    display: flex;
+-    justify-content: space-between;
+-    align-items: center;
+-    margin-bottom: 32px;
+-}
+-
+-.pf-modal-title {
+-    font-family: 'Outfit';
+-    font-size: 1.5rem;
+-    font-weight: 800;
+-    margin: 0;
+-    background: linear-gradient(120deg, #ffffff, #a5b4fc, #6366f1);
+-    -webkit-background-clip: text;
+-    -webkit-text-fill-color: transparent;
+-    background-clip: text;
+-}
+-
+-.pf-modal-badge {
+-    font-size: 0.68rem;
+-    padding: 4px 12px;
+-    background: rgba(99, 102, 241, 0.12);
+-    border: 1px solid rgba(99, 102, 241, 0.25);
+-    border-radius: 20px;
+-    color: #a5b4fc;
+-    font-weight: 700;
+-    letter-spacing: 0.5px;
+-}
+-
+-.pf-form-group {
+-    margin-bottom: 20px;
+-}
+-
+-.pf-form-group label {
+-    display: block;
+-    font-size: 0.78rem;
+-    color: #64748b;
+-    font-weight: 700;
+-    text-transform: uppercase;
+-    letter-spacing: 0.5px;
+-    margin-bottom: 8px;
+-}
+-
+-.pf-input {
+-    background: rgba(0, 0, 0, 0.3);
+-    border: 1px solid rgba(255, 255, 255, 0.08);
+-    color: #fff;
+-    padding: 14px 16px;
+-    border-radius: 10px;
+-    width: 100%;
+-    font-family: 'Inter', sans-serif;
+-    font-size: 0.92rem;
+     box-sizing: border-box;
+-    transition: all 0.3s ease;
+-}
+-
+-.pf-input:focus {
+-    border-color: rgba(99, 102, 241, 0.5);
+-    outline: none;
+-    background: rgba(99, 102, 241, 0.04);
+-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+-}
+-
+-.pf-form-row {
+-    display: grid;
+-    grid-template-columns: 1fr 1fr;
+-    gap: 16px;
+-}
+-
+-.pf-form-info {
+-    display: flex;
+-    align-items: center;
+-    justify-content: space-between;
+-    padding: 12px 16px;
+-    background: rgba(99, 102, 241, 0.06);
+-    border: 1px solid rgba(99, 102, 241, 0.12);
+-    border-radius: 10px;
+-    margin-bottom: 24px;
+-    font-size: 0.85rem;
+-    color: #94a3b8;
+-}
+-
+-.pf-form-info strong {
+-    color: #a5b4fc;
+-    font-family: 'Outfit';
+-    font-size: 1.05rem;
+-}
+-
+-.pf-limit-hint {
+-    font-size: 0.72rem;
+-    color: #475569;
+-    font-weight: 600;
++    padding: 20px 22px;
++    background: var(--dc-surface);
++    border: 1px solid var(--dc-line-strong);
++    border-radius: var(--dc-radius);
++    box-shadow: none;
++    animation: none;
+ }
+-
+-.pf-modal-actions {
++#import-modal .pf-modal-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
++#import-modal .pf-modal-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--dc-text); background: none; -webkit-text-fill-color: currentColor; }
++#import-modal .pf-modal-actions { display: flex; gap: 8px; margin: 14px 0 8px; }
++#import-modal .pf-modal-actions .pf-btn { flex: 1; height: 36px; }
++#import-modal .pf-btn-cancel { width: 100%; height: 34px; }
++.pf-import-dropzone {
+     display: flex;
+-    gap: 14px;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++    gap: 6px;
++    padding: 28px 16px;
++    margin-bottom: 14px;
++    border: 1px dashed var(--dc-line-strong);
++    border-radius: var(--dc-radius);
++    background: var(--dc-surface-2);
++    cursor: pointer;
++    transition: none;
++}
++.pf-import-dropzone:hover, .pf-dropzone-hover { border-color: var(--dc-text-muted) !important; background: var(--dc-surface-3) !important; box-shadow: none; }
++.pf-dropzone-text { font-size: 0.85rem; font-weight: 600; color: var(--dc-text); }
++.pf-dropzone-text strong { color: var(--dc-text); }
++.pf-dropzone-hint { font-size: 0.7rem; color: var(--dc-text-muted); }
++.pf-import-preview { margin-bottom: 14px; animation: none; }
++.pf-import-summary { margin-bottom: 10px; }
++.pf-import-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 8px 12px; border: 1px solid var(--dc-line); border-radius: var(--dc-radius); background: var(--dc-surface-2); }
++.pf-import-stat { display: flex; align-items: baseline; gap: 6px; }
++.pf-import-stat-label { font-size: 0.7rem; color: var(--dc-text-muted); }
++.pf-import-stat-value { font-size: 0.92rem; font-weight: 700; color: var(--dc-text); }
++.pf-import-stat-sub { font-size: 0.68rem; color: var(--dc-text-muted); font-weight: 400; margin-left: 4px; }
++.pf-import-table-wrap { max-height: 260px; overflow-y: auto; border: 1px solid var(--dc-line); border-radius: var(--dc-radius); }
++.pf-import-warning {
++    padding: 8px 12px;
+     margin-bottom: 14px;
++    border: 1px solid var(--dc-line);
++    border-left: 3px solid var(--status-warn);
++    border-radius: var(--dc-radius);
++    background: var(--status-warn-surface);
++    color: var(--dc-text);
++    font-size: 0.78rem;
++    animation: none;
+ }
+-
+-.pf-btn-buy, .pf-btn-sell {
+-    flex: 1;
+-    height: 50px;
+-    border: none;
+-    border-radius: 10px;
+-    font-weight: 700;
+-    font-size: 0.95rem;
+-    font-family: 'Inter', sans-serif;
++.pf-import-warning strong { color: var(--dc-text); }
++.pf-import-valtime { margin: 0 0 14px; padding: 10px 12px; border: 1px solid var(--dc-line-strong); border-radius: var(--dc-radius); font-size: 0.8rem; }
++.pf-import-valtime-label { display: block; margin-bottom: 6px; font-weight: 600; color: var(--dc-text); }
++.pf-import-valtime-req { margin-left: 6px; padding: 0 5px; border: 1px solid var(--status-block); border-radius: 4px; font-size: 0.62rem; font-weight: 700; color: var(--status-block); }
++.pf-import-valtime-input { width: 120px; }
++.pf-import-valtime-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
++.pf-valtime-pick {
++    height: 30px;
++    padding: 0 10px;
++    border-radius: 4px;
++    font-size: 0.72rem;
+     cursor: pointer;
+-    transition: all 0.25s ease;
+-    color: #fff;
+-    letter-spacing: 0.5px;
++    color: var(--dc-text-2);
++    background: transparent;
++    border: 1px solid var(--dc-line-strong);
++    box-shadow: none;
+ }
++.pf-valtime-pick:hover { border-color: var(--dc-text-muted); color: var(--dc-text); }
++.pf-valtime-pick.active { background: var(--dc-line-strong); border-color: var(--dc-text-muted); color: var(--dc-text); box-shadow: none; }
++.pf-import-valtime-hint { margin-top: 6px; color: var(--dc-text-muted); font-size: 0.7rem; }
++.pf-import-valtime-date:empty { display: none; }
+ 
+-.pf-btn-buy {
+-    background: linear-gradient(135deg, #10b981, #059669);
+-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+-}
+ 
+-.pf-btn-buy:hover {
+-    box-shadow: 0 6px 28px rgba(16, 185, 129, 0.35);
+-    transform: translateY(-1px);
++/* ── 顶栏 ── */
++.pf-topbar { margin-bottom: 16px; }
++.pf-title { margin: 0; }
++.pf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
++
++/* ── 穿透区 (原内联样式移入, 只用 var) ── */
++#pf-lookthrough-zone h4, #pf-decision-zone h4 { margin: 14px 0 6px; font-size: 0.8rem; font-weight: 600; color: var(--dc-text-2); }
++#pf-lookthrough-zone .lt-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; }
++#pf-lookthrough-zone .lt-table td, #pf-lookthrough-zone .lt-table th { padding: 5px 8px; vertical-align: top; }
++#pf-lookthrough-zone .num, #pf-decision-zone .num { text-align: right; font-variant-numeric: tabular-nums; }
++#pf-lookthrough-zone small, #pf-lookthrough-zone .lt-sub { color: var(--dc-text-muted); font-size: 0.68rem; }
++#pf-lookthrough-zone .lt-overlap b { font-weight: 500; color: var(--dc-text-muted); }
++.lt-banner { padding: 8px 12px; margin-bottom: 8px; border: 1px solid var(--dc-line); border-left: 3px solid var(--status-info); border-radius: var(--dc-radius); background: var(--dc-surface-2); font-size: 0.78rem; color: var(--dc-text-2); }
++.lt-banner.lt-warn-banner { border-left-color: var(--status-warn); background: var(--status-warn-surface); }
++.lt-note { color: var(--dc-text-muted); font-size: 0.68rem; margin-top: 6px; }
++.lt-unknown { font-size: 0.75rem; color: var(--dc-text-2); padding-left: 18px; }
++.lt-kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
++.lt-kpi { padding: 8px 10px; border: 1px solid var(--dc-line); border-radius: var(--dc-radius); background: var(--dc-surface-2); min-width: 0; }
++.lt-kpi-label { font-size: 0.68rem; color: var(--dc-text-muted); }
++.lt-kpi-value { font-size: 1rem; font-weight: 700; color: var(--dc-text); white-space: nowrap; }
++.lt-kpi-sub { font-size: 0.65rem; color: var(--dc-text-muted); }
++.lt-compliance .lt-banner { margin-bottom: 10px; }
++.lt-compliance details { margin-top: 4px; }
++.lt-risk-contrib { margin-top: 14px; }
++.lt-risk-contrib > summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--dc-text-2); }
++
++/* ── 决定记录与复盘 (原内联样式移入) ── */
++#pf-decision-zone .dr-table td, #pf-decision-zone .dr-table th { padding: 5px 8px; vertical-align: top; }
++#pf-decision-zone .dr-sub, #pf-decision-zone .dr-meta, #pf-decision-zone .dr-note { color: var(--dc-text-muted); font-size: 0.7rem; }
++#pf-decision-zone .dr-meta { margin: 4px 0 6px; }
++#pf-decision-zone .dr-insufficient, #pf-decision-zone .dr-banner { padding: 8px 12px; margin: 6px 0; border: 1px solid var(--dc-line); border-left: 3px solid var(--status-info); border-radius: var(--dc-radius); background: var(--dc-surface-2); font-size: 0.78rem; color: var(--dc-text-2); }
++#pf-decision-zone .dr-hypo, #pf-decision-zone .dr-retro { color: var(--dc-text-muted); font-size: 0.68rem; }
++#pf-decision-zone .dr-caveats { font-size: 0.7rem; color: var(--dc-text-muted); padding-left: 18px; margin: 6px 0; }
++#pf-decision-zone .dr-kpi { font-size: 0.78rem; margin: 6px 0; color: var(--dc-text-2); }
++#pf-decision-zone .dr-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; font-size: 0.75rem; }
++#pf-decision-zone .dr-form label { display: flex; flex-direction: column; gap: 3px; color: var(--dc-text-muted); }
++#pf-decision-zone .dr-form .dr-wide { grid-column: span 2; }
++#pf-decision-zone .dr-form textarea { min-height: 54px; resize: vertical; }
++#pf-decision-zone .dr-cand ul { margin: 4px 0; padding-left: 18px; font-size: 0.72rem; }
++#pf-decision-zone .dr-cand input { width: 140px; }
++#pf-decision-zone .dr-ok { color: var(--status-pass); font-size: 0.75rem; }
++#pf-decision-zone .dr-err { color: var(--status-warn); font-size: 0.75rem; }
++#pf-decision-zone .dr-thesis { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
++#pf-decision-zone .dr-start-input { width: 150px; display: inline-block; }
++@media (max-width: 900px) {
++    #pf-lookthrough-zone .lt-grid { grid-template-columns: 1fr; }
++    #pf-decision-zone .dr-form { grid-template-columns: 1fr 1fr; }
+ }
+ 
+-.pf-btn-sell {
+-    background: linear-gradient(135deg, #ef4444, #dc2626);
+-    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
++/* ── 响应式 (桌面窄屏) ── */
++@media (max-width: 1200px) {
++    .pf-hero-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ }
+ 
+-.pf-btn-sell:hover {
+-    box-shadow: 0 6px 28px rgba(239, 68, 68, 0.35);
+-    transform: translateY(-1px);
+-}
++/* 2026-11-03 组合页精简 P4: 模块开关 (config/portfolio_modules.json) */
++.pm-off { display: none !important; }
+ 
+-.pf-btn-cancel {
+-    width: 100%;
+-    height: 46px;
+-    background: transparent;
+-    border: 1px solid rgba(255, 255, 255, 0.08);
+-    border-radius: 10px;
+-    color: #64748b;
++/* ═══════════ 视觉轮 · 可见模块结束 (VISIBLE-END) ═══════════ */
++
++
++/* ═══════════════════════════════════════════════════════════
++   隐藏模块 (HIDDEN-MODULES): config/portfolio_modules.json 关闭的模块原样式, 本轮不做视觉处理。
++   恢复模块前需按视觉轮规范改写 (docs/PORTFOLIO_SLIMMING_PLAN.md 10.6)。
++   ═══════════════════════════════════════════════════════════ */
++/* ── 调整仓位按钮 (已删列) / 图表盒 (行业饼图、历史模拟: 隐藏) ── */
++
++/* 调整仓位按钮 */
++.pf-btn-adjust {
++    padding: 7px 16px;
++    font-size: 0.75rem;
+     font-weight: 600;
+-    font-size: 0.88rem;
+     font-family: 'Inter', sans-serif;
++    color: #94a3b8;
++    background: transparent;
++    border: 1px solid rgba(255, 255, 255, 0.1);
++    border-radius: 8px;
+     cursor: pointer;
+     transition: all 0.25s;
++    white-space: nowrap;
+ }
+ 
+-.pf-btn-cancel:hover {
+-    border-color: rgba(255, 255, 255, 0.15);
+-    color: #94a3b8;
+-    background: rgba(255, 255, 255, 0.03);
++.pf-btn-adjust:hover {
++    color: #fff;
++    border-color: rgba(99, 102, 241, 0.4);
++    background: rgba(99, 102, 241, 0.1);
++    box-shadow: 0 0 16px rgba(99, 102, 241, 0.12);
+ }
+ 
+ /* ═══════════════════════════════════
+-   响应式
++   ZONE 3 & 4: 图表区域
+    ═══════════════════════════════════ */
+ 
+-@media (max-width: 1400px) {
+-    .pf-hero-cards {
+-        grid-template-columns: repeat(3, 1fr);
+-    }
+-}
+-
+-@media (max-width: 1200px) {
+-    .pf-charts-row {
+-        grid-template-columns: 1fr;
+-    }
+-
+-    .pf-chart-wide,
+-    .pf-chart-narrow {
+-        grid-column: span 1;
+-    }
+-}
+-
+-@media (max-width: 900px) {
+-    .pf-hero-cards {
+-        grid-template-columns: repeat(2, 1fr);
+-    }
+-
+-    .pf-hero-main {
+-        flex-direction: column;
+-        align-items: flex-start;
+-        gap: 16px;
+-    }
+-
+-    .pf-form-row {
+-        grid-template-columns: 1fr;
+-    }
++.pf-charts-row {
++    display: grid;
++    grid-template-columns: 1fr 1fr;
++    gap: 20px;
+ }
+ 
+-/* ═══════════════════════════════════
+-   入场动画
+-   ═══════════════════════════════════ */
+-
+-.pf-hero,
+-.pf-positions-panel,
+-.pf-chart-box,
+-.pf-history-panel {
+-    animation: pf-fadeUp 0.6s ease-out both;
++/* 净值+Gauge 行宽度分配 */
++.pf-chart-wide {
++    grid-column: span 1;
+ }
+ 
+-.pf-positions-panel { animation-delay: 0.08s; }
+-.pf-chart-box:nth-child(1) { animation-delay: 0.14s; }
+-.pf-chart-box:nth-child(2) { animation-delay: 0.2s; }
+-.pf-history-panel { animation-delay: 0.26s; }
+-
+-@keyframes pf-fadeUp {
+-    from {
+-        opacity: 0;
+-        transform: translateY(24px);
+-    }
+-    to {
+-        opacity: 1;
+-        transform: translateY(0);
+-    }
++.pf-chart-narrow {
++    grid-column: span 1;
+ }
+ 
+-/* ═══════════════════════════════════
+-   可折叠面板系统 (V24.1)
+-   ═══════════════════════════════════ */
+-
+-.pf-collapsible-header {
+-    cursor: pointer;
+-    user-select: none;
+-    transition: opacity 0.2s;
++.pf-chart-box {
++    padding: 26px 28px;
++    border-radius: 18px !important;
++    min-height: 420px;
+ }
+ 
+-.pf-collapsible-header:hover {
+-    opacity: 0.85;
++.pf-chart-box h4 {
++    font-size: 1rem;
++    font-weight: 700;
++    color: #fff;
++    margin: 0 0 18px 0;
++    display: flex;
++    align-items: center;
++    gap: 8px;
+ }
+ 
+-.pf-collapse-arrow {
+-    font-size: 0.72rem;
+-    color: #64748b;
+-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
++.pf-chart-box h4::before {
++    content: '';
+     display: inline-block;
++    width: 4px;
++    height: 16px;
++    background: linear-gradient(180deg, #6366f1, #3b82f6);
++    border-radius: 3px;
+ }
+ 
+-.pf-collapse-arrow.pf-arrow-open {
+-    transform: rotate(90deg);
+-}
+-
+-.pf-collapsible-body {
+-    overflow: hidden;
+-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+-    max-height: 0;
+-    opacity: 0;
++.pf-chart-sub {
++    font-size: 0.68rem;
++    color: #475569;
++    font-weight: 500;
++    font-family: 'Outfit';
++    margin-left: 4px;
+ }
+ 
+-.pf-collapsible-body.pf-expanded {
+-    max-height: 3000px;
+-    opacity: 1;
++/* Gauge 网格 */
++.pf-gauge-grid {
++    display: grid;
++    grid-template-columns: 1fr;
++    gap: 0;
+ }
+ 
+-/* 折叠状态下面板视觉提示 */
+-.pf-panel-collapsed {
+-    border-color: rgba(255, 255, 255, 0.03) !important;
+-}
+ 
+-.pf-panel-collapsed .pf-panel-header {
+-    margin-bottom: 0;
+-}
++/* ── Trade 弹窗 (trade_entry 关闭); 共用类已限定到 #trade-modal / #reset-modal ── */
+ 
+ /* ═══════════════════════════════════
+-   导入持仓功能样式
++   交易弹窗 V2.0
+    ═══════════════════════════════════ */
+ 
+-/* 导入按钮 */
+-.btn-import {
+-    display: inline-flex;
++#trade-modal.pf-modal-overlay, #reset-modal.pf-modal-overlay {
++    position: fixed;
++    top: 0; left: 0; right: 0; bottom: 0;
++    background: rgba(0, 0, 0, 0.8);
++    backdrop-filter: blur(12px);
++    display: none;
++    justify-content: center;
+     align-items: center;
+-    gap: 6px;
+-    padding: 10px 20px;
+-    font-size: 0.85rem;
+-    font-weight: 700;
+-    font-family: 'Inter', sans-serif;
+-    color: #fff;
+-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+-    border: 1px solid rgba(16, 185, 129, 0.3);
+-    border-radius: 10px;
+-    cursor: pointer;
+-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+-    letter-spacing: 0.3px;
+-}
+-
+-.btn-import:hover {
+-    box-shadow: 0 0 28px rgba(16, 185, 129, 0.35);
+-    transform: translateY(-1px);
+-    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
++    z-index: 1001;
+ }
+ 
+-.btn-import:active {
+-    transform: translateY(0);
++#trade-modal .pf-modal, #reset-modal .pf-modal {
++    width: 500px;
++    max-width: 90vw;
++    padding: 40px;
++    border: 1px solid rgba(255, 255, 255, 0.06);
++    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(99, 102, 241, 0.05);
++    border-radius: 20px;
++    background: linear-gradient(180deg, rgba(20, 24, 38, 0.97), rgba(15, 23, 42, 0.99));
++    animation: pf-modal-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+ }
+ 
+-/* 2026-11-04 权威环境 1b: 非权威 (本机) 时导入 / 清零 / 交易按钮禁用 */
+-.btn.ac-write-locked,
+-.btn.ac-write-locked:hover {
+-    opacity: 0.45;
+-    cursor: not-allowed;
+-    transform: none;
+-    box-shadow: none;
+-}
+-.pf-authority-note {
+-    font-size: 0.75rem;
+-    font-weight: 600;
+-    color: var(--status-block, #d6409f);
+-    white-space: nowrap;
++@keyframes pf-modal-in {
++    from { opacity: 0; transform: scale(0.92) translateY(20px); }
++    to { opacity: 1; transform: scale(1) translateY(0); }
+ }
+ 
+-/* 拖放区 */
+-.pf-import-dropzone {
++#trade-modal .pf-modal-header, #reset-modal .pf-modal-header {
+     display: flex;
+-    flex-direction: column;
++    justify-content: space-between;
+     align-items: center;
+-    justify-content: center;
+-    gap: 12px;
+-    padding: 50px 30px;
+-    border: 2px dashed rgba(99, 102, 241, 0.25);
+-    border-radius: 16px;
+-    background: rgba(99, 102, 241, 0.03);
+-    cursor: pointer;
+-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+-    margin-bottom: 20px;
+-}
+-
+-.pf-import-dropzone:hover,
+-.pf-dropzone-hover {
+-    border-color: rgba(99, 102, 241, 0.5) !important;
+-    background: rgba(99, 102, 241, 0.08) !important;
+-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.08);
+-}
+-
+-.pf-dropzone-icon {
+-    font-size: 2.8rem;
+-    opacity: 0.7;
+-    transition: transform 0.3s;
+-}
+-
+-.pf-import-dropzone:hover .pf-dropzone-icon {
+-    transform: scale(1.15) translateY(-4px);
+-    opacity: 1;
++    margin-bottom: 32px;
+ }
+ 
+-.pf-dropzone-text {
+-    font-size: 1rem;
+-    font-weight: 600;
+-    color: #cbd5e1;
++#trade-modal .pf-modal-title, #reset-modal .pf-modal-title {
++    font-family: 'Outfit';
++    font-size: 1.5rem;
++    font-weight: 800;
++    margin: 0;
++    background: linear-gradient(120deg, #ffffff, #a5b4fc, #6366f1);
++    -webkit-background-clip: text;
++    -webkit-text-fill-color: transparent;
++    background-clip: text;
+ }
+ 
+-.pf-dropzone-text strong {
++#trade-modal .pf-modal-badge, #reset-modal .pf-modal-badge {
++    font-size: 0.68rem;
++    padding: 4px 12px;
++    background: rgba(99, 102, 241, 0.12);
++    border: 1px solid rgba(99, 102, 241, 0.25);
++    border-radius: 20px;
+     color: #a5b4fc;
++    font-weight: 700;
++    letter-spacing: 0.5px;
+ }
+ 
+-.pf-dropzone-hint {
+-    font-size: 0.78rem;
+-    color: #475569;
+-    font-weight: 500;
+-}
+-
+-/* 导入预览区 */
+-.pf-import-preview {
+-    animation: pf-fadeUp 0.4s ease-out;
+-    margin-bottom: 20px;
+-}
+-
+-.pf-import-summary {
+-    margin-bottom: 16px;
+-}
+-
+-.pf-import-stats {
+-    display: flex;
+-    gap: 16px;
+-    flex-wrap: wrap;
+-    padding: 14px 18px;
+-    background: rgba(99, 102, 241, 0.06);
+-    border: 1px solid rgba(99, 102, 241, 0.12);
+-    border-radius: 12px;
+-}
+-
+-.pf-import-stat {
+-    display: flex;
+-    align-items: baseline;
+-    gap: 6px;
+-}
+-
+-.pf-import-stat-label {
+-    font-size: 0.75rem;
+-    color: #64748b;
+-    font-weight: 600;
+-}
+-
+-.pf-import-stat-value {
+-    font-size: 1.1rem;
+-    font-weight: 800;
+-    font-family: 'Outfit', sans-serif;
+-    color: #e2e8f0;
++#trade-modal .pf-form-group {
++    margin-bottom: 20px;
+ }
+ 
+-/* 预览表格容器 */
+-.pf-import-table-wrap {
+-    max-height: 300px;
+-    overflow-y: auto;
+-    border-radius: 10px;
+-    border: 1px solid rgba(255, 255, 255, 0.04);
+-    background: rgba(0, 0, 0, 0.15);
+-    padding: 4px;
++#trade-modal .pf-form-group label {
++    display: block;
++    font-size: 0.78rem;
++    color: #64748b;
++    font-weight: 700;
++    text-transform: uppercase;
++    letter-spacing: 0.5px;
++    margin-bottom: 8px;
+ }
+ 
+-.pf-import-table-wrap::-webkit-scrollbar {
+-    width: 5px;
++#trade-modal .pf-input, #reset-modal .pf-input {
++    background: rgba(0, 0, 0, 0.3);
++    border: 1px solid rgba(255, 255, 255, 0.08);
++    color: #fff;
++    padding: 14px 16px;
++    border-radius: 10px;
++    width: 100%;
++    font-family: 'Inter', sans-serif;
++    font-size: 0.92rem;
++    box-sizing: border-box;
++    transition: all 0.3s ease;
+ }
+ 
+-.pf-import-table-wrap::-webkit-scrollbar-track {
+-    background: transparent;
++#trade-modal .pf-input:focus, #reset-modal .pf-input:focus {
++    border-color: rgba(99, 102, 241, 0.5);
++    outline: none;
++    background: rgba(99, 102, 241, 0.04);
++    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+ }
+ 
+-.pf-import-table-wrap::-webkit-scrollbar-thumb {
+-    background: rgba(255, 255, 255, 0.08);
+-    border-radius: 6px;
++#trade-modal .pf-form-row {
++    display: grid;
++    grid-template-columns: 1fr 1fr;
++    gap: 16px;
+ }
+ 
+-/* 警告条 */
+-.pf-import-warning {
++#trade-modal .pf-form-info {
+     display: flex;
+     align-items: center;
+-    gap: 8px;
+-    padding: 12px 18px;
+-    background: rgba(245, 158, 11, 0.08);
+-    border: 1px solid rgba(245, 158, 11, 0.2);
+-    border-radius: 10px;
+-    font-size: 0.82rem;
+-    color: #fbbf24;
+-    font-weight: 500;
+-    margin-bottom: 20px;
+-    animation: pf-fadeUp 0.5s ease-out 0.1s both;
+-}
+-
+-.pf-import-warning strong {
+-    color: #f59e0b;
+-}
+-
+-/* 2026-11-04 (2b): 估值时点 (必填) */
+-.pf-import-valtime {
+-    margin: 0 0 14px;
+-    padding: 12px 18px;
+-    border: 1px solid rgba(148, 163, 184, 0.25);
++    justify-content: space-between;
++    padding: 12px 16px;
++    background: rgba(99, 102, 241, 0.06);
++    border: 1px solid rgba(99, 102, 241, 0.12);
+     border-radius: 10px;
+-    font-size: 0.82rem;
+-}
+-.pf-import-valtime-label { display: block; margin-bottom: 6px; font-weight: 600; color: #e2e8f0; }
+-.pf-import-valtime-req { margin-left: 6px; font-size: 0.7rem; font-weight: 700; color: var(--status-block, #d6409f); }
+-.pf-import-valtime-input { width: 140px; font-family: 'JetBrains Mono', monospace; }
+-.pf-import-valtime-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+-.pf-valtime-pick {
+-    padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;
+-    color: #cbd5e1; background: transparent; border: 1px solid rgba(148, 163, 184, 0.3);
++    margin-bottom: 24px;
++    font-size: 0.85rem;
++    color: #94a3b8;
+ }
+-.pf-valtime-pick:hover { border-color: rgba(148, 163, 184, 0.6); color: #f1f5f9; }
+-.pf-valtime-pick.active { border-color: #94a3b8; color: #f8fafc; background: rgba(148, 163, 184, 0.15); }
+-.pf-import-valtime-hint { margin-top: 6px; color: #94a3b8; font-size: 0.75rem; }
+-.pf-import-valtime-date { margin-top: 2px; color: #94a3b8; font-size: 0.75rem; }
+-.pf-import-valtime-date:empty { display: none; }
+ 
+-/* 导入历史记录样式 */
+-.pf-hist-import .pf-hist-status {
+-    color: #a78bfa !important;
++#trade-modal .pf-form-info strong {
++    color: #a5b4fc;
++    font-family: 'Outfit';
++    font-size: 1.05rem;
+ }
+ 
+-.pf-history-item.pf-hist-import {
+-    border-left: 3px solid rgba(167, 139, 250, 0.4);
+-    background: rgba(139, 92, 246, 0.04);
++#trade-modal .pf-limit-hint {
++    font-size: 0.72rem;
++    color: #475569;
++    font-weight: 600;
+ }
+ 
+-.pf-history-item.pf-hist-import:hover {
+-    background: rgba(139, 92, 246, 0.08);
+-    border-color: rgba(167, 139, 250, 0.6);
++#trade-modal .pf-modal-actions, #reset-modal .pf-modal-actions {
++    display: flex;
++    gap: 14px;
++    margin-bottom: 14px;
+ }
+ 
+-/* ═══════════════════════════════════
+-   同步数据按钮
+-   ═══════════════════════════════════ */
+-
+-.btn-sync {
+-    display: inline-flex;
+-    align-items: center;
+-    gap: 6px;
+-    padding: 10px 20px;
+-    font-size: 0.85rem;
++#trade-modal .pf-btn-buy, #trade-modal .pf-btn-sell {
++    flex: 1;
++    height: 50px;
++    border: none;
++    border-radius: 10px;
+     font-weight: 700;
++    font-size: 0.95rem;
+     font-family: 'Inter', sans-serif;
+-    color: #fff;
+-    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+-    border: 1px solid rgba(6, 182, 212, 0.3);
+-    border-radius: 10px;
+     cursor: pointer;
+-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+-    box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
+-    letter-spacing: 0.3px;
+-}
+-
+-.btn-sync:hover {
+-    box-shadow: 0 0 28px rgba(6, 182, 212, 0.35);
+-    transform: translateY(-1px);
+-    background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
++    transition: all 0.25s ease;
++    color: #fff;
++    letter-spacing: 0.5px;
+ }
+ 
+-.btn-sync:active {
+-    transform: translateY(0);
++#trade-modal .pf-btn-buy {
++    background: linear-gradient(135deg, #10b981, #059669);
++    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+ }
+ 
+-.btn-sync:disabled {
+-    opacity: 0.6;
+-    cursor: not-allowed;
+-    transform: none;
++#trade-modal .pf-btn-buy:hover {
++    box-shadow: 0 6px 28px rgba(16, 185, 129, 0.35);
++    transform: translateY(-1px);
+ }
+ 
+-.btn-sync-loading {
+-    animation: pf-sync-pulse 1.5s ease-in-out infinite;
++#trade-modal .pf-btn-sell {
++    background: linear-gradient(135deg, #ef4444, #dc2626);
++    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+ }
+ 
+-@keyframes pf-sync-pulse {
+-    0%, 100% {
+-        box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
+-    }
+-    50% {
+-        box-shadow: 0 0 32px rgba(6, 182, 212, 0.45);
+-    }
++#trade-modal .pf-btn-sell:hover {
++    box-shadow: 0 6px 28px rgba(239, 68, 68, 0.35);
++    transform: translateY(-1px);
+ }
+ 
+-/* ═══════════════════════════════════
+-   价格来源标签 (broker / cost / tushare)
+-   ═══════════════════════════════════ */
+-
+-.pf-src-tag {
+-    display: inline-block;
+-    margin-left: 5px;
+-    padding: 1px 6px;
+-    border-radius: 4px;
+-    font-size: 0.62rem;
+-    font-weight: 700;
++#trade-modal .pf-btn-cancel, #reset-modal .pf-btn-cancel {
++    width: 100%;
++    height: 46px;
++    background: transparent;
++    border: 1px solid rgba(255, 255, 255, 0.08);
++    border-radius: 10px;
++    color: #64748b;
++    font-weight: 600;
++    font-size: 0.88rem;
+     font-family: 'Inter', sans-serif;
+-    letter-spacing: 0.3px;
+-    vertical-align: middle;
+-    line-height: 1.4;
+-}
+-
+-.pf-src-broker {
+-    background: rgba(245, 158, 11, 0.12);
+-    border: 1px solid rgba(245, 158, 11, 0.25);
+-    color: #fbbf24;
++    cursor: pointer;
++    transition: all 0.25s;
+ }
+ 
+-.pf-src-cost {
+-    background: rgba(239, 68, 68, 0.10);
+-    border: 1px solid rgba(239, 68, 68, 0.2);
+-    color: #f87171;
++#trade-modal .pf-btn-cancel:hover, #reset-modal .pf-btn-cancel:hover {
++    border-color: rgba(255, 255, 255, 0.15);
++    color: #94a3b8;
++    background: rgba(255, 255, 255, 0.03);
+ }
+ 
+-.pf-src-ts {
+-    background: rgba(99, 102, 241, 0.10);
+-    border: 1px solid rgba(99, 102, 241, 0.2);
+-    color: #a5b4fc;
+-}
++/* 隐藏弹窗内的颜色类 (清零摘要用) */
++#reset-modal .pf-danger { color: #ef4444 !important; }
++#reset-modal .pf-gold { color: #fbbf24 !important; }
+ 
+ /* ═══════════════════════════════════
+    清零功能样式
+@@ -1352,6 +966,7 @@
+     color: #f87171 !important;
+ }
+ 
++
+ /* ═══════════════════════════════════
+    ZONE 6: 执行质量分析 (OMS Slippage)
+    ═══════════════════════════════════ */
+@@ -1756,216 +1371,3 @@
+ .slip-diag-card.diag-info { border-left-color: #3b82f6; }
+ .slip-diag-title { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+ .slip-diag-detail { font-size: 0.72rem; color: #94a3b8; line-height: 1.5; }
+-
+-/* ====== 可折叠面板 (交易记录) ====== */
+-.pf-collapsible-header {
+-    cursor: pointer;
+-    user-select: none;
+-    transition: background 0.2s ease;
+-}
+-.pf-collapsible-header:hover {
+-    background: rgba(255, 255, 255, 0.03);
+-    border-radius: 12px;
+-}
+-.pf-collapse-arrow {
+-    font-size: 0.8rem;
+-    color: #64748b;
+-    transition: transform 0.3s ease, color 0.2s ease;
+-    display: inline-flex;
+-    align-items: center;
+-}
+-.pf-collapse-arrow.pf-arrow-open {
+-    transform: rotate(0deg);
+-    color: #6366f1;
+-}
+-.pf-collapsible-body {
+-    overflow: hidden;
+-}
+-
+-/* ════════════════════════════════════
+-   Portfolio Alert Bar 智能警示系统
+-   ════════════════════════════════════ */
+-
+-/* 容器: 空时不占位 */
+-.pf-alert-strip {
+-    display: flex;
+-    flex-direction: column;
+-    gap: 6px;
+-    margin-bottom: 0;
+-}
+-
+-.pf-alert-strip:empty {
+-    display: none;
+-}
+-
+-/* 单条警示 */
+-.pf-alert-item {
+-    display: flex;
+-    align-items: flex-start;
+-    gap: 10px;
+-    padding: 10px 16px;
+-    border-radius: 10px;
+-    border-left: 3px solid transparent;
+-    font-size: 0.82rem;
+-    font-weight: 500;
+-    line-height: 1.4;
+-    animation: pf-alert-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+-}
+-
+-@keyframes pf-alert-in {
+-    from { opacity: 0; transform: translateX(-8px); }
+-    to { opacity: 1; transform: translateX(0); }
+-}
+-
+-/* 🛑 硬阻断 */
+-.pf-alert-block {
+-    background: rgba(239, 68, 68, 0.08);
+-    border-left-color: #ef4444;
+-    color: #fca5a5;
+-}
+-
+-.pf-alert-block .pf-alert-icon {
+-    animation: pf-alert-pulse 1.5s ease-in-out infinite;
+-}
+-
+-@keyframes pf-alert-pulse {
+-    0%, 100% { opacity: 1; }
+-    50% { opacity: 0.5; }
+-}
+-
+-/* ⚠️ 软警告 */
+-.pf-alert-warn {
+-    background: rgba(245, 158, 11, 0.06);
+-    border-left-color: #f59e0b;
+-    color: #fcd34d;
+-}
+-
+-/* ℹ️ 情报提示 */
+-.pf-alert-info {
+-    background: rgba(59, 130, 246, 0.05);
+-    border-left-color: #3b82f6;
+-    color: #93c5fd;
+-}
+-
+-/* 内部元素 */
+-.pf-alert-icon {
+-    font-size: 0.92rem;
+-    flex-shrink: 0;
+-    margin-top: 1px;
+-}
+-
+-.pf-alert-body {
+-    flex: 1;
+-    min-width: 0;
+-}
+-
+-.pf-alert-main {
+-    line-height: 1.45;
+-}
+-
+-.pf-alert-title {
+-    font-weight: 700;
+-    margin-right: 6px;
+-}
+-
+-.pf-alert-detail {
+-    opacity: 0.85;
+-}
+-
+-/* 操作建议行 */
+-.pf-alert-action {
+-    display: flex;
+-    align-items: center;
+-    gap: 6px;
+-    margin-top: 5px;
+-    padding: 4px 10px;
+-    border-radius: 6px;
+-    background: rgba(255, 255, 255, 0.03);
+-    font-size: 0.75rem;
+-    font-weight: 600;
+-    opacity: 0.75;
+-    transition: opacity 0.2s;
+-    line-height: 1.4;
+-}
+-
+-.pf-alert-item:hover .pf-alert-action {
+-    opacity: 1;
+-}
+-
+-.pf-alert-warn .pf-alert-action {
+-    color: #fde68a;
+-    background: rgba(245, 158, 11, 0.06);
+-}
+-
+-.pf-alert-info .pf-alert-action {
+-    color: #bfdbfe;
+-    background: rgba(59, 130, 246, 0.05);
+-}
+-
+-.pf-alert-block .pf-alert-action {
+-    color: #fecaca;
+-    background: rgba(239, 68, 68, 0.06);
+-}
+-
+-.pf-alert-action-icon {
+-    font-size: 0.7rem;
+-    opacity: 0.6;
+-    flex-shrink: 0;
+-}
+-
+-/* 全局合规指示灯 */
+-.pf-compliance-dot {
+-    display: inline-flex;
+-    align-items: center;
+-    gap: 6px;
+-    padding: 4px 14px;
+-    border-radius: 20px;
+-    font-size: 0.72rem;
+-    font-weight: 700;
+-    letter-spacing: 0.5px;
+-    font-family: 'Outfit', sans-serif;
+-    transition: all 0.4s ease;
+-}
+-
+-.pf-compliance-ok {
+-    background: rgba(16, 185, 129, 0.1);
+-    border: 1px solid rgba(16, 185, 129, 0.25);
+-    color: #34d399;
+-}
+-
+-.pf-compliance-warn {
+-    background: rgba(245, 158, 11, 0.1);
+-    border: 1px solid rgba(245, 158, 11, 0.25);
+-    color: #fbbf24;
+-    animation: pf-alert-pulse 2s ease-in-out infinite;
+-}
+-
+-.pf-compliance-block {
+-    background: rgba(239, 68, 68, 0.12);
+-    border: 1px solid rgba(239, 68, 68, 0.3);
+-    color: #f87171;
+-    animation: pf-alert-pulse 1.5s ease-in-out infinite;
+-}
+-
+-/* 2026-11-03 组合页精简 P1: 徽章只读合规引擎; 加载中 / 不可用为中性样式 (不显示通过色) */
+-a.pf-compliance-dot { text-decoration: none; cursor: pointer; }
+-.pf-compliance-unknown {
+-    background: rgba(148, 163, 184, 0.1);
+-    border: 1px solid rgba(148, 163, 184, 0.3);
+-    color: #cbd5e1;
+-}
+-.pf-compliance-time { font-weight: 400; opacity: 0.7; }
+-.pf-compliance-time:empty { display: none; }
+-.pf-alert-source { font-size: 0.72rem; color: #64748b; padding: 2px 4px; }
+-.pf-alert-source a { color: inherit; }
+-
+-/* 2026-11-03 组合页精简 P3: KPI 说明行、穿透区合规行与风险贡献 */
+-.pf-kpi-sub { display: block; font-size: 0.68rem; color: #94a3b8; margin-top: 2px; line-height: 1.35; }
+-.pf-kpi-sub:empty { display: none; }
+-.lt-compliance .lt-banner { margin-bottom: 10px; }
+-.lt-compliance details { margin-top: 4px; }
+-.lt-risk-contrib { margin-top: 14px; }
+-.lt-risk-contrib > summary { cursor: pointer; font-size: 0.85rem; color: #94a3b8; }
+-
+-/* 2026-11-03 组合页精简 P4: 模块开关 (config/portfolio_modules.json) */
+-.pm-off { display: none !important; }
+diff --git a/quant_dashboard/static/js/decision_review_panel.js b/quant_dashboard/static/js/decision_review_panel.js
+index 11e18a9..7a70665 100644
+--- a/quant_dashboard/static/js/decision_review_panel.js
++++ b/quant_dashboard/static/js/decision_review_panel.js
+@@ -24,7 +24,8 @@
+         if (!show) return '***';
+         return v == null || !isFinite(Number(v)) ? '—' : `${(Number(v) / 10000).toFixed(2)} 万`;
+     }
+-    function signCls(v) { return v == null ? '' : (Number(v) > 0 ? 'dr-pos' : Number(v) < 0 ? 'dr-neg' : ''); }
++    // 2026-11-04 视觉轮: 实际收益 / 实际增值红涨绿跌 (0 中性); 假设对照 ("若执行") 不着色
++    function signCls(v) { return v == null ? '' : (Number(v) > 0 ? 'ac-up' : Number(v) < 0 ? 'ac-down' : 'ac-flat'); }
+ 
+     // ── 组合区间比较 ──
+     function renderPortfolioReview(r, show) {
+@@ -61,7 +62,7 @@
+         }
+         if (rv.evaluation === 'hypothetical_direction') {
+             const items = (rv.items || []).map((i) => `${esc(i.ts_code)} ${pct(i.price_change)}`
+-                + (i.if_executed == null ? '' : ` → 若执行 <b class="${signCls(i.if_executed)}">${pct(i.if_executed)}</b>`))
++                + (i.if_executed == null ? '' : ` → 若执行 <b class="dr-hypo-num">${pct(i.if_executed)}</b>`))
+                 .join('<br>');
+             return `<span class="dr-hypo">假设对照</span><div>${items}</div>`;
+         }
+@@ -74,7 +75,7 @@
+             const st = STATUS[r.decision_status] || r.decision_status || '';
+             const retro = r.retrospective ? ' <span class="dr-retro" title="事后补记, 不计入汇总">补记</span>' : '';
+             const linkBtn = ['adopted', 'planned'].includes(r.decision_status) && r.intent !== 'hold'
+-                ? `<button class="slip-refresh-btn dr-cand-btn" data-id="${esc(r.decision_id)}">成交关联</button>` : '';
++                ? `<button class="pf-btn pf-btn-sm dr-cand-btn" data-id="${esc(r.decision_id)}">成交关联</button>` : '';
+             return `<tr data-id="${esc(r.decision_id)}"><td>${esc(r.decided_on)}</td><td>${esc(st)}${retro}</td>
+                 <td>${esc(INTENT[r.intent] || r.intent || '')}</td><td>${esc((r.codes || []).join(', '))}</td>
+                 <td class="dr-thesis" title="${esc(r.thesis || '')}">${esc((r.thesis || '').slice(0, 40))}</td>
+@@ -101,12 +102,12 @@
+         const lrows = linked.map((t) => `<li>${esc(t.date)} ${esc(t.ts_code)} ${esc(t.side === 'buy' ? '买' : '卖')}
+             ${show ? esc(t.qty) + ' @ ' + esc(t.price) : ''}
+             <input class="pf-input dr-unlink-reason" placeholder="取消原因 (必填)" data-key="${esc(t.key)}">
+-            <button class="slip-refresh-btn dr-unlink-btn" data-key="${esc(t.key)}">取消关联</button></li>`).join('');
++            <button class="pf-btn pf-btn-sm dr-unlink-btn" data-key="${esc(t.key)}">取消关联</button></li>`).join('');
+         const crows = ((cands && cands.candidates) || []).filter((t) => !linked.some((l) => l.key === t.key))
+             .map((t) => `<li>${esc(t.date)} ${esc(t.ts_code)} ${esc(t.side === 'buy' ? '买' : '卖')}
+                 ${show ? esc(t.qty) + ' @ ' + esc(t.price) : ''}
+                 ${t.linked_to ? '<span class="dr-sub">已属另一条决定</span>'
+-                              : `<button class="slip-refresh-btn dr-link-btn" data-key="${esc(t.key)}">确认关联</button>`}</li>`)
++                              : `<button class="pf-btn pf-btn-sm dr-link-btn" data-key="${esc(t.key)}">确认关联</button>`}</li>`)
+             .join('');
+         return `<div class="dr-cand"><div><b>执行状态</b>: ${esc(ex.label || '')}</div>
+             ${lrows ? `<div>已关联:</div><ul>${lrows}</ul>` : ''}
+diff --git a/quant_dashboard/static/js/lookthrough_panel.js b/quant_dashboard/static/js/lookthrough_panel.js
+index aa5e74c..4a12a92 100644
+--- a/quant_dashboard/static/js/lookthrough_panel.js
++++ b/quant_dashboard/static/js/lookthrough_panel.js
+@@ -30,20 +30,20 @@
+         }
+         const unk = d.unknown || {};
+         const kpi = `
+-            <div class="slip-kpi-row">
+-                <div class="slip-kpi-card"><div class="slip-kpi-label">可穿透识别</div>
+-                    <div class="slip-kpi-value">${pct(d.known_lookthrough_pct_of_invested)}</div>
+-                    <div class="slip-kpi-sub">占持仓市值</div></div>
+-                <div class="slip-kpi-card" data-unknown="${Number(unk.value) > 0 ? '1' : '0'}">
+-                    <div class="slip-kpi-label">未知暴露</div>
+-                    <div class="slip-kpi-value">${pct(unk.pct_of_total)}</div>
+-                    <div class="slip-kpi-sub">${Number(unk.value) > 0 ? '不是零风险, 见下方明细' : '无未知暴露'}</div></div>
+-                <div class="slip-kpi-card"><div class="slip-kpi-label">现金</div>
+-                    <div class="slip-kpi-value">${pct(d.cash_pct)}</div>
+-                    <div class="slip-kpi-sub">占总资产</div></div>
+-                <div class="slip-kpi-card"><div class="slip-kpi-label">重叠公司</div>
+-                    <div class="slip-kpi-value">${(d.overlap_companies || []).length}</div>
+-                    <div class="slip-kpi-sub">出现在多只 ETF/直接持股</div></div>
++            <div class="lt-kpi-row">
++                <div class="lt-kpi"><div class="lt-kpi-label">可穿透识别</div>
++                    <div class="lt-kpi-value">${pct(d.known_lookthrough_pct_of_invested)}</div>
++                    <div class="lt-kpi-sub">占持仓市值</div></div>
++                <div class="lt-kpi" data-unknown="${Number(unk.value) > 0 ? '1' : '0'}">
++                    <div class="lt-kpi-label">未知暴露</div>
++                    <div class="lt-kpi-value">${pct(unk.pct_of_total)}</div>
++                    <div class="lt-kpi-sub">${Number(unk.value) > 0 ? '不是零风险, 见下方明细' : '无未知暴露'}</div></div>
++                <div class="lt-kpi"><div class="lt-kpi-label">现金</div>
++                    <div class="lt-kpi-value">${pct(d.cash_pct)}</div>
++                    <div class="lt-kpi-sub">占总资产</div></div>
++                <div class="lt-kpi"><div class="lt-kpi-label">重叠公司</div>
++                    <div class="lt-kpi-value">${(d.overlap_companies || []).length}</div>
++                    <div class="lt-kpi-sub">出现在多只 ETF/直接持股</div></div>
+             </div>`;
+         const inds = (d.industries || []).slice(0, 8).map((r) =>
+             `<tr><td>${esc(r.industry)}</td><td class="num">${pct(r.pct_of_total)}</td></tr>`).join('');
+@@ -51,7 +51,7 @@
+             const via = Array.from(new Set((c.sources || []).map((s) => s.via === 'direct' ? '直接持股' : s.via)));
+             return `<tr${c.overlap ? ' class="lt-overlap"' : ''}><td>${esc(c.name)}<small> ${esc(c.code)}</small></td>
+                 <td>${esc(c.industry || '行业未知')}</td><td class="num">${pct(c.pct_of_total, 2)}</td>
+-                <td>${via.map(esc).join(' · ')}${c.overlap ? ' <b title="同一公司来自多个来源">重叠</b>' : ''}</td></tr>`;
++                <td>${via.map(esc).join(' · ')}${c.overlap ? ' <span class="ac-tag" title="同一公司来自多个来源">重叠</span>' : ''}</td></tr>`;
+         }).join('');
+         const etfs = (d.etfs || []).map((e) => `<tr>
+                 <td>${esc(e.instrument_name || e.name || e.ts_code)}<small> ${esc(e.ts_code)}</small>
+@@ -59,7 +59,7 @@
+                 <td>${esc(e.tracking_index_name || '--')}<small> ${esc(e.tracking_index_code || '')}</small></td>
+                 <td>${esc(BASIS_LABEL[e.exposure_basis] || e.exposure_basis || '--')}</td>
+                 <td>${esc(e.weights_as_of || '--')}${e.reported_ann_date ? `<div class="lt-sub">公告 ${esc(e.reported_ann_date)}</div>` : ''}</td>
+-                <td>${e.is_verified ? '已核验' : `<b class="lt-warn">未核验</b>`}</td></tr>`).join('');
++                <td>${e.is_verified ? '已核验' : '<span class="ac-tag ac-tag-warn">未核验</span>'}</td></tr>`).join('');
+         const unknownRows = (unk.items || []).map((u) =>
+             `<li>${esc(u.name || u.ts_code)} ${esc(u.ts_code)} · ${wan(u.value)} · ${esc(REASON_LABEL[u.reason] || u.reason)}</li>`).join('');
+         return `${kpi}
+@@ -84,10 +84,10 @@
+                 `${k === '_other_equity' ? '其余权益' : esc(k)} ${(Number(v) * 100).toFixed(0)}%`).join('，');
+             const top = (x.by_theme || []).slice(0, 2).map((t) => `${esc(t.theme)} ${wan(t.loss)}`).join('；');
+             return `<tr><td><b>${esc(x.name)}</b><div class="lt-sub">${esc(x.desc || '')}</div></td>
+-                <td class="lt-sub">${shocks}</td><td class="num"><b>${range}</b></td><td class="lt-sub">${top}</td></tr>`;
++                <td class="lt-sub">${shocks}</td><td class="num lt-stress-num"><b>${range}</b></td><td class="lt-sub">${top}</td></tr>`;
+         }).join('');
+         const lims = (s.limitations || []).map(esc).join('；');
+-        return `<div class="lt-banner">${esc(s.nature)}<br>参数来源: ${esc(s.param_source)}</div>
++        return `<div class="lt-banner"><span class="ac-tag ac-tag-info">条件估计 · 非预测</span> ${esc(s.nature)}<br>参数来源：${esc(s.param_source)}</div>
+             <table class="pf-table lt-table"><thead><tr><th>情景</th><th>冲击假设</th><th class="num">估算损失 (占总资产)</th>
+             <th>主要来源</th></tr></thead><tbody>${rows}</tbody></table>
+             <p class="lt-note">${esc(s.unknown_rule || '')}。局限: ${lims}</p>`;
+@@ -115,7 +115,7 @@
+         const t = ((themeView && themeView.themes) || []).find((x) => x && x.theme === m.top_theme);
+         if (!t || Math.abs(Number(t.pct) - Number(m.top_pct)) > TOLERANCE_PP) {
+             const sum = t ? `行业合计 ${pct(t.pct)}，` : '';
+-            return `<div class="lt-banner">${head}<details><summary>行业拆分（口径不一致：${sum}以合规为准）</summary>` +
++            return `<div class="lt-banner lt-warn-banner">${head}<details><summary>行业拆分（口径不一致：${sum}以合规为准）</summary>` +
+                 `${t ? t.industries.map((r) => `${esc(r.industry)} ${pct(r.pct, 2)}`).join('，') : '无对应行业'}</details></div>`;
+         }
+         const inds = t.industries || [];
+diff --git a/quant_dashboard/static/js/portfolio_manager.js b/quant_dashboard/static/js/portfolio_manager.js
+index 8e6b7b4..7be9ce0 100644
+--- a/quant_dashboard/static/js/portfolio_manager.js
++++ b/quant_dashboard/static/js/portfolio_manager.js
+@@ -38,6 +38,19 @@ function _broadcastPortfolioChange(action, detail) {
+     }
+ }
+ 
++// 2026-11-04 视觉轮: 涨跌语义类 (红涨绿跌, 0 为中性); 只用于实际涨跌与盈亏
++function pnlClass(v) {
++    const n = Number(v);
++    if (v == null || !Number.isFinite(n) || n === 0) return 'ac-flat';
++    return n > 0 ? 'ac-up' : 'ac-down';
++}
++// 接口文案中的 emoji 前端不显示 (不改接口)
++function stripEmoji(s) {
++    return String(s == null ? '' : s)
++        .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, '')
++        .replace(/\s{2,}/g, ' ').trim();
++}
++
+ // 2026-11-03 组合页精简 P4: 模块开关 (static/js/portfolio_modules.js); 开关脚本缺失时全部按开启处理
+ function pmOn(key) { return !window.PfModules || window.PfModules.on(key); }
+ function pmReady() { return (window.PfModules && window.PfModules.ready) || Promise.resolve(); }
+@@ -75,8 +88,15 @@ document.addEventListener('DOMContentLoaded', function () {
+         const toast = document.createElement('div');
+         toast.className = `pf-toast pf-toast-${type}`;
+ 
+-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+-        toast.innerHTML = `<span class="pf-toast-icon">${icons[type] || '📌'}</span><span class="pf-toast-msg">${message}</span>`;
++        // 2026-11-04 视觉轮: 文字标签替代图标; 文案按纯文本写入 (接口文案过滤 emoji)
++        const labels = { success: '完成', error: '失败', info: '提示', warning: '注意' };
++        const tag = document.createElement('span');
++        tag.className = 'pf-toast-icon';
++        tag.textContent = labels[type] || '提示';
++        const msg = document.createElement('span');
++        msg.className = 'pf-toast-msg';
++        msg.textContent = stripEmoji(message);
++        toast.append(tag, msg);
+         container.appendChild(toast);
+ 
+         requestAnimationFrame(() => toast.classList.add('pf-toast-show'));
+@@ -178,20 +198,19 @@ document.addEventListener('DOMContentLoaded', function () {
+         body.innerHTML = '';
+ 
+         if (positions.length === 0) {
+-            body.innerHTML = '<tr><td colspan="8" class="pf-table-empty">当前组合无持仓头寸 (Empty Portfolio)</td></tr>';
++            body.innerHTML = '<tr><td colspan="8" class="pf-table-empty">当前无持仓</td></tr>';
+             return;
+         }
+ 
+         positions.forEach(pos => {
+             const row = document.createElement('tr');
+-            const pnlClass = pos.pnl >= 0 ? 'pf-up' : 'pf-danger';
++            const pnlCls = pnlClass(pos.pnl);   // 金额与百分比同色 (红涨绿跌, 0 中性)
+             const parts = pos.ts_code.split('.');
+             const codeNum = parts[0];
+             const codeExt = parts.length > 1 ? parts[1] : '';
+ 
+-            // 仓位占比进度条颜色 (防御性: 旧 API 可能没有 weight)
++            // 仓位占比进度条: 中性色, 不随数值变色 (删除前端 >15% / >10% 阈值)
+             const weight = pos.weight != null ? pos.weight : 0;
+-            const weightColor = weight > 15 ? '#ef4444' : weight > 10 ? '#f59e0b' : '#3b82f6';
+ 
+             row.innerHTML = `
+                 <td>
+@@ -206,17 +225,17 @@ document.addEventListener('DOMContentLoaded', function () {
+                 </td>
+                 <td class="pf-mono">${pos.amount.toLocaleString()}</td>
+                 <td class="pf-mono pf-dim">¥${pos.cost.toFixed(2)}</td>
+-                <td class="pf-mono">¥${pos.price.toFixed(2)}${pos.price_source === 'broker' ? '<span class="pf-src-tag pf-src-broker" title="券商导入报价 (当日优先)">券</span>' : pos.price_source === 'cost' ? '<span class="pf-src-tag pf-src-cost" title="使用成本价兜底">成本</span>' : '<span class="pf-src-tag pf-src-ts" title="Tushare 收盘价">TS</span>'}</td>
+-                <td class="pf-mono pf-accent">¥${pos.market_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
++                <td class="pf-mono">¥${pos.price.toFixed(2)}${pos.price_source === 'broker' ? '<span class="pf-src-tag pf-src-broker" title="券商导入报价 (当日优先)">券商</span>' : pos.price_source === 'cost' ? '<span class="pf-src-tag pf-src-cost" title="现价缺失, 以成本价兜底: 市值与盈亏不真实">成本价兜底</span>' : '<span class="pf-src-tag pf-src-ts" title="Tushare 收盘价">TS</span>'}</td>
++                <td class="pf-mono">¥${pos.market_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                 <td>
+                     <div class="pf-weight-cell">
+                         <span class="pf-weight-num">${weight.toFixed(1)}%</span>
+                         <div class="pf-weight-bar">
+-                            <div class="pf-weight-fill" style="width: ${Math.min(weight * 5, 100)}%; background: ${weightColor};"></div>
++                            <div class="pf-weight-fill" style="width: ${Math.min(weight * 5, 100)}%;"></div>
+                         </div>
+                     </div>
+                 </td>
+-                <td class="${pnlClass} pf-pnl-cell">
++                <td class="${pnlCls} pf-pnl-cell">
+                     <span class="pf-pnl-val">${pos.pnl > 0 ? '+' : ''}${pos.pnl.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                     <span class="pf-pnl-pct">${pos.pnl_pct > 0 ? '+' : ''}${pos.pnl_pct.toFixed(2)}%</span>
+                 </td>
+@@ -758,18 +777,18 @@ document.addEventListener('DOMContentLoaded', function () {
+ 
+         const totalMV = positions.reduce((s, p) => s + p.amount * p.price, 0);
+         const frozenNote = (cashAvailable > 0 && cash > cashAvailable)
+-            ? `<span style="font-size:0.7rem;color:#94a3b8;margin-left:4px;" title="可用 ¥${cashAvailable.toLocaleString(undefined,{minimumFractionDigits:2})}，差额为逆回购/冻结资金">(可用 ¥${cashAvailable.toLocaleString(undefined,{minimumFractionDigits:0})})</span>`
++            ? `<span class="pf-import-stat-sub" title="可用 ¥${cashAvailable.toLocaleString(undefined,{minimumFractionDigits:2})}，差额为逆回购 / 冻结资金">（可用 ¥${cashAvailable.toLocaleString(undefined,{minimumFractionDigits:0})}）</span>`
+             : '';
+         importSummary.innerHTML = `
+             <div class="pf-import-stats">
+                 <span class="pf-import-stat">
+                     <span class="pf-import-stat-label">检测到</span>
+-                    <span class="pf-import-stat-value pf-accent">${positions.length}</span>
++                    <span class="pf-import-stat-value">${positions.length}</span>
+                     <span class="pf-import-stat-label">只持仓</span>
+                 </span>
+                 <span class="pf-import-stat">
+                     <span class="pf-import-stat-label">账户余额</span>
+-                    <span class="pf-import-stat-value pf-gold">¥${cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}${frozenNote}</span>
++                    <span class="pf-import-stat-value">¥${cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}${frozenNote}</span>
+                 </span>
+                 <span class="pf-import-stat">
+                     <span class="pf-import-stat-label">持仓市值</span>
+@@ -777,13 +796,13 @@ document.addEventListener('DOMContentLoaded', function () {
+                 </span>
+                 <span class="pf-import-stat">
+                     <span class="pf-import-stat-label">总资产</span>
+-                    <span class="pf-import-stat-value" style="color:#10b981;">¥${totalAsset.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
++                    <span class="pf-import-stat-value">¥${totalAsset.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                 </span>
+             </div>
+         `;
+ 
+         importPreviewBody.innerHTML = positions.map(p => {
+-            const pnlClass = p.price >= p.cost ? 'pf-up' : 'pf-danger';
++            const pxCls = pnlClass(p.price - p.cost);   // 现价相对成本: 红涨绿跌, 相等中性
+             return `<tr>
+                 <td>
+                     <div class="pf-code-cell">
+@@ -794,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function () {
+                 <td class="pf-name-cell">${p.name}</td>
+                 <td class="pf-mono">${p.amount.toLocaleString()}</td>
+                 <td class="pf-mono pf-dim">¥${p.cost.toFixed(3)}</td>
+-                <td class="pf-mono ${pnlClass}">¥${p.price.toFixed(3)}</td>
++                <td class="pf-mono ${pxCls}">¥${p.price.toFixed(3)}</td>
+             </tr>`;
+         }).join('');
+     }
+@@ -813,7 +832,7 @@ document.addEventListener('DOMContentLoaded', function () {
+         }
+ 
+         importConfirmBtn.disabled = true;
+-        importConfirmBtn.textContent = '⏳ 导入中...';
++        importConfirmBtn.textContent = '导入中…';
+ 
+         try {
+             const formData = new FormData();
+@@ -828,11 +847,11 @@ document.addEventListener('DOMContentLoaded', function () {
+ 
+             if (result.status === 'success' && result.data.success) {
+                 importModal.style.display = 'none';
+-                showToast(`✅ 成功导入 ${result.data.imported} 只持仓，可用资金 ¥${result.data.cash.toLocaleString()}`, 'success', 5000);
++                showToast(`成功导入 ${result.data.imported} 只持仓，可用资金 ¥${result.data.cash.toLocaleString()}`, 'success', 5000);
+ 
+                 if (result.data.errors && result.data.errors.length > 0) {
+                     setTimeout(() => {
+-                        showToast(`⚠️ ${result.data.errors.length} 条解析警告`, 'warning');
++                        showToast(`${result.data.errors.length} 条解析警告`, 'warning');
+                     }, 1000);
+                 }
+ 
+@@ -850,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function () {
+             showToast('网络错误，请重试: ' + err.message, 'error');
+         } finally {
+             importConfirmBtn.disabled = false;
+-            importConfirmBtn.textContent = '✅ 确认导入';
++            importConfirmBtn.textContent = '确认导入';
+         }
+     };
+ 
+@@ -957,7 +976,7 @@ document.addEventListener('DOMContentLoaded', function () {
+ 
+     syncBtn.onclick = async () => {
+         syncBtn.disabled = true;
+-        syncBtn.textContent = '⏳ 同步中...';
++        syncBtn.textContent = '同步中…';
+         syncBtn.classList.add('btn-sync-loading');
+ 
+         showToast('正在从 Tushare 拉取最新行情数据...', 'info', 4000);
+@@ -969,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
+             if (result.status === 'success' && result.data.success) {
+                 const d = result.data;
+                 showToast(
+-                    `✅ ${d.message}` +
++                    stripEmoji(d.message) +
+                     (d.failed > 0 ? ` · ${d.failed} 只失败` : '') +
+                     (d.freshness?.daily_latest ? ` · 最新: ${d.freshness.daily_latest}` : ''),
+                     d.failed > 0 ? 'warning' : 'success',
+@@ -989,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function () {
+             showToast('网络错误: ' + err.message, 'error');
+         } finally {
+             syncBtn.disabled = false;
+-            syncBtn.textContent = '🔄 同步数据';
++            syncBtn.textContent = '同步数据';
+             syncBtn.classList.remove('btn-sync-loading');
+         }
+     };
+@@ -1097,7 +1116,6 @@ document.addEventListener('DOMContentLoaded', function () {
+         historyToggle.addEventListener('click', () => {
+             const isHidden = historyList.style.display === 'none';
+             historyList.style.display = isHidden ? 'block' : 'none';
+-            historyArrow.textContent = isHidden ? '▼' : '▶';
+             historyArrow.classList.toggle('pf-arrow-open', isHidden);
+         });
+     }
+diff --git a/quant_dashboard/tests/test_import_valuation_time.cjs b/quant_dashboard/tests/test_import_valuation_time.cjs
+index 32ca379..1e94bf0 100644
+--- a/quant_dashboard/tests/test_import_valuation_time.cjs
++++ b/quant_dashboard/tests/test_import_valuation_time.cjs
+@@ -32,5 +32,6 @@ assert.deepEqual(picks, ['15:00', '11:30', '09:00']);
+ for (const p of picks) assert(re.test(p), p);
+ assert.match(pm, /importValInput\.value = b\.dataset\.valtime;\s+syncImportConfirm\(\)/);
+ assert.match(pm, /forEach\(b => b\.classList\.remove\('active'\)\)/);   // 重新打开时清除选中
+-assert.match(html, /portfolio_manager\.js\?v=51"/);
++// 2026-11-04 视觉轮 V1 改动 portfolio_manager.js (去 emoji / 涨跌语义类), 版本号 51 → 52
++assert.match(html, /portfolio_manager\.js\?v=52"/);
+ console.log('import valuation time OK');
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+new file mode 100644
+index 0000000..33dd1c3
+--- /dev/null
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -0,0 +1,153 @@
++// 2026-11-04 组合页视觉轮 (docs/PORTFOLIO_SLIMMING_PLAN.md 第 10 节) (node tests/test_portfolio_visual.cjs)
++// 只做静态 / 沙箱检查, 不改任何口径: 色值变量只在 ac_tokens.css、可见区域无 emoji / 渐变 / 毛玻璃 / 循环动画 / 阴影、
++// 红涨绿跌、英文清理、隐藏模块与权威收尾轮内容不受影响。
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++const assert = require('node:assert/strict');
++const root = path.join(__dirname, '..');
++const read = p => fs.readFileSync(path.join(root, p), 'utf8');
++
++const html = read('portfolio.html');
++const css = read('static/css/portfolio.css');
++const pm = read('static/js/portfolio_manager.js');
++const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}▶▼●⏳↻]/u;
++
++// ── 可见区域 HTML: 去掉侧栏 (全站导航, 本轮不动) 与隐藏模块 (config/portfolio_modules.json 关闭) ──
++function cut(src, startMark, endMark) {
++    const a = src.indexOf(startMark);
++    assert(a >= 0, `标记缺失: ${startMark}`);
++    const b = src.indexOf(endMark, a + startMark.length);
++    assert(b > a, `标记缺失: ${endMark}`);
++    return src.slice(0, a) + src.slice(b);
++}
++function cutLine(src, needle) {
++    const i = src.indexOf(needle);
++    assert(i >= 0, `缺少: ${needle}`);
++    const a = src.lastIndexOf('\n', i), b = src.indexOf('\n', i);
++    return src.slice(0, a) + src.slice(b);
++}
++let visible = html.slice(html.indexOf('<main'), html.indexOf('<script src="./static/js/portfolio_modules.js'));
++visible = cut(visible, '<div class="pf-alert-strip" id="pf-alerts-risk">', '<!-- ═══ 成交记录');   // 行业饼图 / Brinson / 历史模拟 / 三因子 / 滑点
++visible = cut(visible, '<!-- ═══ 交易弹窗 ═══ -->', '<!-- ═══ 导入持仓弹窗 ═══ -->');
++assert(visible.includes('<!-- ═══ 清零确认弹窗 ═══ -->'));
++visible = visible.slice(0, visible.indexOf('<!-- ═══ 清零确认弹窗 ═══ -->'));          // 清零弹窗 (reset_button 关闭) 位于最后
++visible = cutLine(visible, 'id="reset-btn"');
++visible = cutLine(visible, 'id="open-trade-btn"');
++visible = cutLine(visible, 'id="pf-sparkline"');
++
++// 1) ac_tokens.css 先于页面样式加载; portfolio.css 不定义色值变量
++const links = [...html.matchAll(/<link rel="stylesheet" href="\.\/static\/css\/([\w_]+)\.css/g)].map(m => m[1]);
++assert.equal(links[0], 'ac_tokens', `ac_tokens.css 须最先加载: ${links.join(',')}`);
++assert(links.indexOf('ac_tokens') < links.indexOf('portfolio'));
++assert(!/^\s*--[\w-]+\s*:/m.test(css), 'portfolio.css 不得定义 CSS 变量');
++
++// 2) portfolio.css 可见模块一节: 只用 var(), 无渐变 / 毛玻璃 / 循环动画 / 阴影 / 位移
++const vs = css.indexOf('VISIBLE-START'), ve = css.indexOf('VISIBLE-END'), hs = css.indexOf('HIDDEN-MODULES');
++assert(vs > 0 && ve > vs && hs > ve, '可见 / 隐藏两节标记缺失');
++const vcss = css.slice(vs, ve).replace(/\/\*[\s\S]*?\*\//g, '');
++assert(!/#[0-9a-fA-F]{3,8}(?![\w-])|rgba?\(|hsla?\(/.test(vcss), '可见模块样式出现字面色值 (只用 var)');
++assert(!/gradient\(/.test(vcss), '可见模块样式含渐变');
++assert(!/infinite|@keyframes/.test(vcss), '可见模块样式含循环 / 关键帧动画');
++for (const m of vcss.matchAll(/backdrop-filter\s*:\s*([^;!]+)/g)) assert.equal(m[1].trim(), 'none', '毛玻璃');
++for (const m of vcss.matchAll(/box-shadow\s*:\s*([^;!]+)/g)) assert.equal(m[1].trim(), 'none', `阴影: ${m[1]}`);
++for (const m of vcss.matchAll(/(?:^|[;{\s])transform\s*:\s*([^;!]+)/g)) {
++    assert(/^(none|rotate\(-?\d+deg\))$/.test(m[1].trim()), `位移 / 缩放: ${m[1]}`);   // 只允许 chevron 旋转
++}
++for (const m of vcss.matchAll(/animation\s*:\s*([^;!]+)/g)) assert.equal(m[1].trim(), 'none', `动画: ${m[1]}`);
++// 面板: 实底 + 1px 线 + 6px 圆角 (glass-panel 类名保留: 折叠逻辑与模块测试依赖)
++assert(/\.pf-content \.glass-panel[\s\S]*?background:\s*var\(--dc-surface\)[\s\S]*?border:\s*1px solid var\(--dc-line\)[\s\S]*?border-radius:\s*var\(--dc-radius\)/.test(vcss));
++// 隐藏模块一节: 只含隐藏模块选择器
++const hcss = css.slice(hs).replace(/\/\*[\s\S]*?\*\//g, '');
++for (const m of hcss.matchAll(/(^|})\s*([^{}@]+?)\s*\{/g)) {
++    const sel = m[2].trim();
++    if (/^(from|to|\d+%|0%, 100%)/.test(sel)) continue;
++    assert(/(slip-|pf-slippage-panel|brinson-|pf-chart|pf-charts-row|pf-gauge|pf-btn-adjust|#trade-modal|#reset-modal|pf-reset|btn-reset|pf-hist-reset|pf-btn-reset)/.test(sel),
++        `隐藏模块一节出现可见模块选择器: ${sel}`);
++}
++
++// 3) 可见区域无 emoji、无内联颜色 / 渐变 / 阴影; 第 3.1 节英文字符串不再出现; 页面标题与导航一致
++assert(!EMOJI.test(visible), `可见区域含 emoji: ${(visible.match(EMOJI) || [])[0]}`);
++for (const m of visible.matchAll(/style="([^"]*)"/g)) {
++    assert(!/color|gradient|shadow|background/i.test(m[1]), `内联样式含颜色 / 阴影: ${m[1]}`);
++}
++for (const s of ['Portfolio Management', 'TOTAL NET ASSET VALUE', 'CASH', 'MKT VALUE', 'Position Monitoring', 'Import',
++                 'CANCEL', 'TXT → SYSTEM', 'Empty Portfolio', 'LIVE']) {
++    assert(!visible.includes(s), `可见区域仍含: ${s}`);
++}
++assert(!pm.includes('Empty Portfolio'));
++assert(/<h2>投资组合<\/h2>/.test(html), '页面标题应为"投资组合" (与导航一致)');
++assert(html.includes('<span>投资组合</span>'));
++assert(!html.includes('pf-live-badge'), '"● LIVE" 为写死的静态文字, 应删除');
++
++// 4) JS: 可见渲染不内联颜色、不渲染 emoji; 涨跌只用语义类
++function fnBody(src, name) {
++    const i = src.indexOf(`function ${name}(`);
++    assert(i >= 0, `缺少函数 ${name}`);
++    let depth = 0, j = src.indexOf('{', i);
++    for (let k = j; k < src.length; k++) {
++        if (src[k] === '{') depth++;
++        else if (src[k] === '}' && --depth === 0) return src.slice(i, k + 1);
++    }
++    throw new Error(name);
++}
++const visibleFns = ['showToast', 'renderValuation', 'renderPositionsTable', 'renderHistory', 'parseAndPreview'];
++for (const name of visibleFns) {
++    const b = fnBody(pm, name);
++    assert(!EMOJI.test(b), `${name} 含 emoji`);
++    assert(!/style="[^"]*(color|background)|\.style\.color|#[0-9a-fA-F]{6}\b/.test(b), `${name} 内联颜色`);
++    assert(!/pf-danger|pf-up\b|pf-gold|pf-accent|weightColor/.test(b), `${name} 仍用旧颜色类`);
++}
++for (const f of ['static/js/portfolio_compliance.js', 'static/js/portfolio_kpis.js', 'static/js/lookthrough_panel.js',
++                 'static/js/decision_review_panel.js']) {
++    const src = read(f);
++    assert(!EMOJI.test(src), `${f} 含 emoji`);
++    assert(!/#[0-9a-fA-F]{6}\b|style="[^"]*color|\.style\.color/.test(src), `${f} 内联颜色`);
++    assert(!/slip-kpi|slip-refresh-btn|dr-pos|dr-neg/.test(src), `${f} 仍用旧类名`);
++}
++for (const s of ["'⏳", "'✅", "'🔄", '`✅', '`⚠️']) {
++    const rest = pm.slice(0, pm.indexOf('//  ZONE 6: OMS 滑点归因面板'));   // 隐藏模块 (滑点 / Brinson / 因子) 之前
++    const vis = rest.slice(0, rest.indexOf('//  清零组合功能')) + rest.slice(rest.indexOf('//  同步行情数据'));
++    assert(!vis.includes(s), `可见区 JS 文本含 emoji: ${s}`);
++}
++
++// 5) 涨跌语义类: 正 → ac-up (红), 负 → ac-down (绿), 0 / 缺失 → ac-flat
++const ctx = {};
++vm.runInNewContext(fnBody(pm, 'pnlClass') + '\n' + fnBody(pm, 'stripEmoji') + '\nthis.pnl = pnlClass; this.strip = stripEmoji;', ctx);
++assert.equal(ctx.pnl(1171.7), 'ac-up');
++assert.equal(ctx.pnl(-9874.8), 'ac-down');
++assert.equal(ctx.pnl(0), 'ac-flat');
++assert.equal(ctx.pnl(null), 'ac-flat');
++assert.equal(ctx.strip('✅ 同步完成 🔄 14 只'), '同步完成 14 只');
++assert(/\.ac-up\s*\{\s*color:\s*var\(--mkt-up\)/.test(css) && /\.ac-down\s*\{\s*color:\s*var\(--mkt-down\)/.test(css));
++const tokens = read('static/css/ac_tokens.css');
++assert(/--mkt-up:\s*#f05252/.test(tokens) && /--mkt-down:\s*#22b573/.test(tokens), '红涨绿跌 (ac_tokens)');
++// 决定复盘: 实际收益红涨绿跌; 假设对照 ("若执行") 不着色
++const dr = read('static/js/decision_review_panel.js');
++const dctx = { console };
++dctx.window = dctx;
++vm.createContext(dctx);
++vm.runInContext(dr, dctx);
++const D = dctx.DecisionReviewPanel;
++const hyp = D.renderDecisionRows([{ decision_id: 'x', decided_on: '2026-11-01', decision_status: 'not_adopted', intent: 'sell', codes: ['600000.SH'],
++    thesis: 't', evaluation: 'hypothetical_direction', items: [{ ts_code: '600000.SH', price_change: -0.05, if_executed: 0.05 }] }], false);
++assert(!/ac-up|ac-down/.test(hyp), '假设对照不按涨跌着色');
++const act = D.renderPortfolioReview({ status: 'ok', paths: [{ label: '实际操作', return: 0.02, max_drawdown: -0.1, end_value: 1 }],
++    value_added_vs_hold: -100, value_added_vs_hold_pct: -0.01 }, false);
++assert(act.includes('class="num ac-up"') && act.includes('class="ac-down"'), '实际收益 / 实际增值红涨绿跌');
++
++// 6) 隐藏模块不受影响: 选择器还在、.pm-off 生效; 权威收尾轮内容还在; 估值时点必填且无默认值
++const mods = read('static/js/portfolio_modules.js');
++for (const sel of ['#pf-sector-zone', '#pf-alerts-risk', '#pf-sparkline', '#pf-brinson-zone', '#pf-nav-zone', '#pf-factor-zone',
++                   '#pf-slippage-zone', '#open-trade-btn', '#trade-modal', '#reset-btn', '#reset-modal']) {
++    assert(mods.includes(`'${sel}'`), `模块开关缺少 ${sel}`);
++    assert(html.includes(`id="${sel.slice(1)}"`), `页面缺少 ${sel}`);
++}
++assert(css.includes('.pm-off { display: none !important; }'));
++assert(html.includes('data-ac-authority-tag') && /id="import-btn" data-ac-account-write="import"/.test(html));
++assert(/id="reset-btn" data-ac-account-write/.test(html) && /id="open-trade-btn" data-ac-account-write/.test(html));
++const valIn = html.match(/<input type="time" id="import-valuation-time"[^>]*>/)[0];
++assert(/\brequired\b/.test(valIn) && !/\bvalue=/.test(valIn), '估值时点 input 必填且无默认值');
++assert(html.includes('class="pf-import-valtime-req">必填'));
++
++console.log('portfolio visual OK');
+-- 
+2.43.0
+

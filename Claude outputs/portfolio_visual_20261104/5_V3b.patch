@@ -1,0 +1,115 @@
+From 4c6db3fa3ef9ea68720919ffc9671fe1a60fc55e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 17:33:18 -0600
+Subject: [PATCH] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=E8=A7=86=E8=A7=89?=
+ =?UTF-8?q?=E8=BD=AE=20V3b=EF=BC=9A=E5=8F=AF=E8=A7=81=E6=96=87=E5=AD=97?=
+ =?UTF-8?q?=E6=98=BE=E7=A4=BA=E4=B8=AD=E6=96=87=EF=BC=88=E4=BB=B7=E6=A0=BC?=
+ =?UTF-8?q?=E6=9D=A5=E6=BA=90=E6=A0=87=E7=AD=BE=E3=80=81=E6=98=A0=E5=B0=84?=
+ =?UTF-8?q?=E8=A1=A8=E8=AF=B4=E6=98=8E=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ docs/PLAN_B_IMPLEMENTATION_LOG.md | 5 +++++
+ portfolio.html                    | 6 +++---
+ static/js/lookthrough_panel.js    | 2 +-
+ static/js/portfolio_view.js       | 4 ++--
+ tests/test_portfolio_visual.cjs   | 5 +++--
+ 5 files changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index 1f886bd..2ac347c 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1625,3 +1625,8 @@ node tests\test_decision_review_panel.cjs
+ - 版本号：portfolio.css 42→43，portfolio_view.js 1→2，portfolio_manager.js 53→54，portfolio_kpis.js 4→5，lookthrough_panel.js 3→4，decision_review_panel.js 3→4；`test_import_valuation_time.cjs`（v=54）、`test_export_coverage_frontend.cjs`（v=5）断言同步，原因同上。
+ - 测试：`test_portfolio_visual.cjs` 增加行业未知不截断且末行、无未知时也单列、穿透无颜色、合规行状态标签与位置、按 ETF 未知小字、风险贡献并排条、压力中性、chevron、决定记录中性 / info 标签、成交记录中性方向标签与价格精度、导入弹窗、手机两列 KPI / 卡片 / 合并规则 / 穿透默认折叠。前端 35 个 `.cjs` 全部通过。
+ - 5 项核对：只改展示；执行目标、合规、跟踪止盈、买入门控、当前仓位、三个 KPI 数字、持仓只数与总市值未改。
++
++### V3b · 可见文字显示中文（17:3x 用户"显示中文"）
++- 渲染后逐词扫描可见文字：持仓表 / 手机卡片价格来源标签 "TS" → "收盘价"（悬浮仍注明 Tushare），图例同步；穿透合规行 "INDUSTRY_THEME_MAP" → "与合规用同一张行业→主题映射表"。
++- 保留：ETF、代码后缀 .SH / .SZ、AIAE（专有名词 / 证券代码）；合规接口原文中的 "pp"、导入提示 ".txt"、行业名 "IT设备"（接口数据，前端不改）。
++- 版本号：portfolio_view.js 2→3、lookthrough_panel.js 4→5；`test_portfolio_visual.cjs` 增加"可见文字无 TS / INDUSTRY_THEME_MAP"断言；前端 35 个 `.cjs` 全部通过。
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index ea0774e..1b2f83b 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -144,7 +144,7 @@
+                                 <th class="num">仓位占比</th>
+                                 <th class="num">浮动盈亏</th>
+                             </tr>
+-                            <tr class="pf-legend-row"><th colspan="8" class="pf-legend">价格来源：TS = Tushare 收盘价 · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格</th></tr>
++                            <tr class="pf-legend-row"><th colspan="8" class="pf-legend">价格来源：收盘价 = 当日收盘价（Tushare） · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格</th></tr>
+                         </thead>
+                         <tbody id="positions-body">
+                             <tr><td colspan="8" class="pf-table-empty">数据加载中…</td></tr>
+@@ -644,9 +644,9 @@
+     <script src="./static/js/portfolio_modules.js?v=1"></script>
+     <script src="./static/js/portfolio_compliance.js?v=3"></script>
+     <script src="./static/js/portfolio_kpis.js?v=5"></script>
+-    <script src="./static/js/portfolio_view.js?v=2"></script>
++    <script src="./static/js/portfolio_view.js?v=3"></script>
+     <script src="./static/js/portfolio_manager.js?v=54"></script>
+-    <script src="./static/js/lookthrough_panel.js?v=4"></script>
++    <script src="./static/js/lookthrough_panel.js?v=5"></script>
+     <script src="./static/js/decision_review_panel.js?v=4"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+ <script src="./static/js/authority_banner.js?v=1"></script><!-- 2026-11-04 非权威环境标注 (服务器不显示) -->
+diff --git a/quant_dashboard/static/js/lookthrough_panel.js b/quant_dashboard/static/js/lookthrough_panel.js
+index 648c9c5..77cfb9c 100644
+--- a/quant_dashboard/static/js/lookthrough_panel.js
++++ b/quant_dashboard/static/js/lookthrough_panel.js
+@@ -170,7 +170,7 @@
+         const rest = inds.slice(3).reduce((s, r) => s + Number(r.pct || 0), 0);
+         if (inds.length > 3) shown.push(`其他 ${pct(rest)}`);
+         return `<div class="lt-banner">${head}<br>其中 行业 ${shown.join(' + ')}` +
+-            `<div class="lt-sub">口径：主题「${esc(m.top_theme)}」= ${inds.map((r) => esc(r.industry)).join(' + ')}（同一映射 INDUSTRY_THEME_MAP）；下方行业表按行业列示，故单一行业数字小于主题数字。</div></div>`;
++            `<div class="lt-sub">口径：主题「${esc(m.top_theme)}」= ${inds.map((r) => esc(r.industry)).join(' + ')}（与合规用同一张行业→主题映射表）；下方行业表按行业列示，故单一行业数字小于主题数字。</div></div>`;
+     }
+ 
+     async function load(fetchFn) {
+diff --git a/quant_dashboard/static/js/portfolio_view.js b/quant_dashboard/static/js/portfolio_view.js
+index 0b3c341..7bed701 100644
+--- a/quant_dashboard/static/js/portfolio_view.js
++++ b/quant_dashboard/static/js/portfolio_view.js
+@@ -7,7 +7,7 @@
+  *   - 价格精度: ETF 成本价 / 现价 3 位, 其余 2 位
+  *   - 仓位占比条: 中性色, 以最大持仓为满格; weight 缺失显示 "--"
+  *   - 浮动盈亏: 金额与百分比同色, 红涨绿跌, 0 中性 (不整行着色)
+- *   - 价格来源: 成本价兜底 = warn 标签 (市值与盈亏不真实); 券商 / TS = info 小字
++ *   - 价格来源: 成本价兜底 = warn 标签 (市值与盈亏不真实); 券商 / 收盘价 = info 小字 (2026-11-04 起显示中文)
+  */
+ (function (root) {
+     'use strict';
+@@ -62,7 +62,7 @@
+     const SRC = {
+         cost: '<span class="ac-tag ac-tag-warn pf-src-cost" title="现价缺失，以成本价兜底：市值与盈亏不真实">成本价兜底</span>',
+         broker: '<span class="pf-src-tag" title="导入当日券商报价">券商</span>',
+-        tushare: '<span class="pf-src-tag" title="Tushare 收盘价">TS</span>',
++        tushare: '<span class="pf-src-tag" title="Tushare 收盘价">收盘价</span>',
+     };
+     function sourceTag(src) { return SRC[src] || SRC.tushare; }
+ 
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+index bb602d5..c5724f3 100644
+--- a/quant_dashboard/tests/test_portfolio_visual.cjs
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -192,9 +192,10 @@ assert(!/background|color/.test(body.replace(/class="[^"]*"/g, '')), '持仓表
+ assert(rowOf('159995.SZ').includes('<span class="pf-weight-num">--</span>') && !rowOf('159995.SZ').includes('0.0%'), 'weight 缺失显示 --');
+ assert(V.barWidth(null, 25) === null && V.barWidth(12.5, 25) === 50);
+ assert(!/weight\s*\*\s*5/.test(read('static/js/portfolio_view.js') + pm), '比例尺不再用 weight*5');
+-// 价格来源: 成本价兜底 = warn 标签; 券商 / TS = info 小字; 名称、行业转义
++// 价格来源: 成本价兜底 = warn 标签; 券商 / 收盘价 = info 小字 (显示中文, 不用 "TS"); 名称、行业转义
+ assert(rowOf('159995.SZ').includes('ac-tag ac-tag-warn pf-src-cost') && rowOf('159995.SZ').includes('成本价兜底'));
+-assert(rowOf('588000.SH').includes('<span class="pf-src-tag" title="Tushare 收盘价">TS</span>'));
++assert(rowOf('588000.SH').includes('<span class="pf-src-tag" title="Tushare 收盘价">收盘价</span>'));
++assert(!/>TS</.test(body) && !visible.includes('TS = ') && !read('static/js/lookthrough_panel.js').includes('INDUSTRY_THEME_MAP'), '可见文字显示中文');
+ assert(rowOf('159995.SZ').includes('&lt;img src=x&gt;') && rowOf('159995.SZ').includes('&lt;b&gt;半导体'));
+ assert(!/>15|> 15|>10|> 10/.test(read('static/js/portfolio_view.js').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')), '前端无占比阈值');
+ assert(html.includes('class="pf-legend"') && html.includes('成本价兜底'), '表头下图例直接可见');
+-- 
+2.43.0
+

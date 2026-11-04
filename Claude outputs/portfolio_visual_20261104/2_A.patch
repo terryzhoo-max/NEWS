@@ -1,0 +1,101 @@
+From 6e7344e0ac71122472279de07be1518b310ee54b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 12:55:58 -0600
+Subject: [PATCH 2/4] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=E8=A7=86?=
+ =?UTF-8?q?=E8=A7=89=E8=BD=AE=20A=EF=BC=9Avaluation=20=E4=BB=B7=E6=A0=BC?=
+ =?UTF-8?q?=E4=BF=9D=E7=95=99=203=20=E4=BD=8D=E5=B0=8F=E6=95=B0=EF=BC=88ET?=
+ =?UTF-8?q?F=20=E6=8A=A5=E4=BB=B7=E5=88=B0=200.001=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ docs/PLAN_B_IMPLEMENTATION_LOG.md       |  6 ++++
+ engines/portfolio_engine.py             |  5 ++-
+ tests/test_valuation_price_precision.py | 42 +++++++++++++++++++++++++
+ 3 files changed, 52 insertions(+), 1 deletion(-)
+ create mode 100644 tests/test_valuation_price_precision.py
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index 96b3bd6..d489f2a 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1600,3 +1600,9 @@ node tests\test_decision_review_panel.cjs
+ - 版本号：portfolio.css 40→41，portfolio_manager.js 51→52，lookthrough_panel.js 2→3，decision_review_panel.js 2→3。`test_import_valuation_time.cjs` 断言 `portfolio_manager.js?v=52`（原因：本提交改动该文件）。
+ - 测试：新增 `tests/test_portfolio_visual.cjs`（ac_tokens 先加载、portfolio.css 不定义变量、可见一节无字面色值 / 渐变 / 毛玻璃 / 阴影 / 动画 / 位移、隐藏一节只含隐藏模块选择器、可见区域无 emoji 与英文、可见渲染函数无内联颜色、涨跌类方向、假设对照不着色、隐藏模块选择器与 `.pm-off`、权威收尾轮标记、估值时点必填无默认值）；前端 34 个 `.cjs` 全部通过。
+ - 5 项核对：只改样式与文案，执行目标、合规、跟踪止盈、买入门控、当前仓位与 KPI 数字未改。
++
++### A · valuation 价格保留 3 位小数（行为提交，排在 V2 之前）
++- `PortfolioEngine.get_valuation` 的 `price` 由 `safe_round(·, 2)` 改为 3 位：ETF 报价到 0.001（服务器 11-04：159995 0.836、159516 0.481、159218 1.168、510300 4.175，原显示 0.84 / 0.48 / 1.17 / 4.17）；个股原价 2 位不变。
++- 下游（全仓库扫描 15 个 `get_valuation()` 调用方 + 前端）：市值、权重、盈亏、总资产、当前仓位、合规、波动预算、回撤刹车、跟踪止盈、决策中枢、审计页等均用未取整价格或不读 `price`，**不变**。唯一读 `price` 的计算是 `get_intraday_pnl`（portfolio_engine.py:555）→ `/portfolio/intraday-pnl` 与 AI 助手日内摘要（AI 已暂停，`intraday_pnl.js` 无页面加载）：按 11-04 持仓，日内盈亏合计变化 −946.40 元（159995 −984.80、510300 −87.50、159218 −24.60、159516 +150.50；个股与 588000 为 0）。该接口 `current_price` 输出仍按 2 位取整（未改）。
++- 测试：新增 `tests/test_valuation_price_precision.py`（ETF 3 位、个股不变、市值 / 权重 / 总资产与未取整价格一致）；对改前代码 1 项失败、改后通过。云端沙盒（PyPI 不可用，tushare 用仓库外桩）引擎相关 pytest 42 项通过；全量 pytest 由用户本机执行。
++- 5 项核对：执行目标、合规、跟踪止盈、买入门控、当前仓位不读 `price`，不变。
+diff --git a/quant_dashboard/engines/portfolio_engine.py b/quant_dashboard/engines/portfolio_engine.py
+index 34f8599..638e3de 100644
+--- a/quant_dashboard/engines/portfolio_engine.py
++++ b/quant_dashboard/engines/portfolio_engine.py
+@@ -413,7 +413,10 @@ class PortfolioEngine:
+                 "industry": industry,
+                 "amount": amount,
+                 "cost": cost,
+-                "price": safe_round(current_price, 2),
++                # 2026-11-04 视觉轮 A: 保留 3 位小数 (ETF 报价到 0.001; 个股原价 2 位不变)。
++                # 市值 / 盈亏 / 权重用未取整价格, 不受影响; 唯一读本字段的计算是 get_intraday_pnl
++                # (docs/PORTFOLIO_SLIMMING_PLAN.md 10.4)。
++                "price": safe_round(current_price, 3),
+                 "price_source": price_source,
+                 "price_as_of": price_as_of,
+                 "market_value": safe_round(market_value, 2),
+diff --git a/quant_dashboard/tests/test_valuation_price_precision.py b/quant_dashboard/tests/test_valuation_price_precision.py
+new file mode 100644
+index 0000000..94204e4
+--- /dev/null
++++ b/quant_dashboard/tests/test_valuation_price_precision.py
+@@ -0,0 +1,42 @@
++"""组合页视觉轮 A (2026-11-04): valuation 的 price 保留 3 位小数; 市值 / 盈亏 / 权重 / 总资产不变。
++
++方案: docs/PORTFOLIO_SLIMMING_PLAN.md 10.4。ETF 报价到 0.001 (如 159995 收盘 0.836), 原先取 2 位显示为 0.84;
++个股原价本就是 2 位, 不受影响。市值始终用未取整价格计算。
++"""
++import os
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++
++from portfolio_engine import PortfolioEngine  # noqa: E402
++
++PRICES = {"159995.SZ": 0.836, "510300.SH": 4.175, "588000.SH": 1.34, "688019.SH": 207.0, "002156.SZ": 42.33}
++AMOUNTS = {"159995.SZ": 246200, "510300.SH": 17500, "588000.SH": 269200, "688019.SH": 1143, "002156.SZ": 600}
++
++
++def _engine(tmp_path, monkeypatch):
++    e = PortfolioEngine(store_path=str(tmp_path / "s.json"), history_path=str(tmp_path / "h.json"))
++    e.holdings = {"cash": 18.59, "positions": {c: {"name": c, "amount": a, "cost": 1.0, "import_date": "2026-11-04"}
++                                               for c, a in AMOUNTS.items()}}
++    monkeypatch.setattr(e, "_pick_price", lambda code, pos: (PRICES[code], "tushare"))
++    return e
++
++
++def test_price_keeps_three_decimals(tmp_path, monkeypatch):
++    val = _engine(tmp_path, monkeypatch).get_valuation()
++    by = {p["ts_code"]: p for p in val["positions"]}
++    assert by["159995.SZ"]["price"] == 0.836          # 原先 0.84
++    assert by["510300.SH"]["price"] == 4.175          # 原先 4.17 / 4.18
++    assert by["588000.SH"]["price"] == 1.34
++    assert by["688019.SH"]["price"] == 207.0 and by["002156.SZ"]["price"] == 42.33   # 个股不变
++
++
++def test_market_value_weight_total_unchanged(tmp_path, monkeypatch):
++    val = _engine(tmp_path, monkeypatch).get_valuation()
++    by = {p["ts_code"]: p for p in val["positions"]}
++    mv = {c: PRICES[c] * a for c, a in AMOUNTS.items()}  # 未取整价格 × 数量
++    for c in AMOUNTS:
++        assert by[c]["market_value"] == round(mv[c], 2)
++    total = sum(mv.values()) + 18.59
++    assert val["total_asset"] == round(total, 2)
++    assert by["159995.SZ"]["weight"] == round(mv["159995.SZ"] / total * 100, 2)
+-- 
+2.43.0
+

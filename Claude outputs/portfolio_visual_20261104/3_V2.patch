@@ -1,0 +1,747 @@
+From f42da01b4678ecd69ac22d24129253f486825c42 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 13:00:36 -0600
+Subject: [PATCH 3/4] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=E8=A7=86?=
+ =?UTF-8?q?=E8=A7=89=E8=BD=AE=20V2=EF=BC=9A=E9=A1=B6=E6=A0=8F=E3=80=81?=
+ =?UTF-8?q?=E6=A0=B8=E5=BF=83=E8=B5=84=E4=BA=A7=E5=8C=BA=E3=80=81=E6=8C=81?=
+ =?UTF-8?q?=E4=BB=93=E8=A1=A8?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ docs/PLAN_B_IMPLEMENTATION_LOG.md       |   8 ++
+ portfolio.html                          |  59 +++++-----
+ static/css/portfolio.css                |  18 ++++
+ static/js/portfolio_compliance.js       |   3 +
+ static/js/portfolio_kpis.js             |  74 +++++++++++--
+ static/js/portfolio_manager.js          |  71 ++++--------
+ static/js/portfolio_view.js             | 119 ++++++++++++++++++++
+ tests/test_export_coverage_frontend.cjs |   3 +-
+ tests/test_import_valuation_time.cjs    |   4 +-
+ tests/test_portfolio_visual.cjs         | 138 +++++++++++++++++++++++-
+ 10 files changed, 409 insertions(+), 88 deletions(-)
+ create mode 100644 static/js/portfolio_view.js
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index d489f2a..e65bfbc 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1606,3 +1606,11 @@ node tests\test_decision_review_panel.cjs
+ - 下游（全仓库扫描 15 个 `get_valuation()` 调用方 + 前端）：市值、权重、盈亏、总资产、当前仓位、合规、波动预算、回撤刹车、跟踪止盈、决策中枢、审计页等均用未取整价格或不读 `price`，**不变**。唯一读 `price` 的计算是 `get_intraday_pnl`（portfolio_engine.py:555）→ `/portfolio/intraday-pnl` 与 AI 助手日内摘要（AI 已暂停，`intraday_pnl.js` 无页面加载）：按 11-04 持仓，日内盈亏合计变化 −946.40 元（159995 −984.80、510300 −87.50、159218 −24.60、159516 +150.50；个股与 588000 为 0）。该接口 `current_price` 输出仍按 2 位取整（未改）。
+ - 测试：新增 `tests/test_valuation_price_precision.py`（ETF 3 位、个股不变、市值 / 权重 / 总资产与未取整价格一致）；对改前代码 1 项失败、改后通过。云端沙盒（PyPI 不可用，tushare 用仓库外桩）引擎相关 pytest 42 项通过；全量 pytest 由用户本机执行。
+ - 5 项核对：执行目标、合规、跟踪止盈、买入门控、当前仓位不读 `price`，不变。
++
++### V2 · 第一屏（顶栏、核心资产区、持仓表）
++- 顶栏：合规徽章阻断实底洋红 / 警告 warn 描边 / 通过 pass 描边 / 加载中与不可用 info；不可用时徽章内直接写"不代表通过"（`#pf-compliance-note`）；"读取于 HH:MM"与跳转保留。导入为唯一实色按钮、同步为描边按钮；本机禁用态改中性虚线并追加"不可用"，不用阻断色（"请在服务器导入"提示沿用权威收尾轮）。
++- 核心资产区：总资产中性唯一大数字；副行"N 只持仓 · 当前仓位 x% · 现金 y%"；`.ac-asof` 持仓截至行；新增"执行目标 x% · 来自决策中枢"（读首页执行区同一接口 `/api/v1/decision/hub` 的 `action_plan.execution_target`，带 `data-ac-authority-tag`，不可用 "--"，不算差额）。五个 KPI 同一组件，顺序 市值 / 现金 / 账户收益 / 当前回撤 / 组合波动，每个都有来源与时间行（市值"价格 MM-DD 收盘"、现金"对账单 MM-DD · 可用资金"）。账户收益红涨绿跌；"数据不足"用 `.ac-state-partial` 写接口 note。回撤、波动数字中性；回撤刹车档位标签与决策中枢 `TIER_CLS` 同一映射（第 3 档阻断实底"回撤刹车第 3 档"，不显示 label 中的"降至 25%"）；波动只写"目标 30%"，状态标签读合规「组合波动预算」（当前"警告"）。
++- 持仓表：新增 `static/js/portfolio_view.js`（纯展示）：市值降序；类型标签按代码前缀（规则见方案 10.5）；ETF 成本价 / 现价 3 位、个股 2 位；占比条中性 `--dc-data`、以最大持仓为满格（替换 `weight*5`）、weight 缺失 "--"；盈亏金额与百分比同色（单元格级）；成本价兜底 `.ac-tag-warn`、券商 / TS 为 info 小字；表头下图例；名称、行业经 `esc()` 转义（顺手项：原先直接拼接 HTML）。
++- 版本号：portfolio.css 41→42，portfolio_manager.js 52→53，portfolio_kpis.js 3→4，portfolio_compliance.js 2→3，新增 portfolio_view.js?v=1。断言同步：`test_import_valuation_time.cjs`（manager v=53）、`test_export_coverage_frontend.cjs`（kpis v=4），原因：本提交改动这两个文件。
++- 测试：`test_portfolio_visual.cjs` 增加类型标签规则表、价格精度、市值降序、盈亏方向与不整行着色、占比条比例尺与缺失、成本兜底标签、转义、KPI 顺序与来源行、回撤 / 波动无涨跌类、档位映射与决策中枢一致、波动标签读合规、执行目标接口与 "--"、无"仓位上限 / 降至"、徽章样式与"不代表通过"、唯一实色按钮、禁用态非阻断色。前端 35 个 `.cjs` 全部通过。
++- 5 项核对：只改展示；执行目标、合规、跟踪止盈、买入门控、当前仓位、三个 KPI 数字、持仓只数与总市值未改。
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index c12c73f..a73a2b9 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -10,7 +10,7 @@
+ 
+     <link rel="stylesheet" href="./static/css/styles.css?v=12">
+     <link rel="stylesheet" href="./static/css/visual_excellence.css?v=3">
+-    <link rel="stylesheet" href="./static/css/portfolio.css?v=41">
++    <link rel="stylesheet" href="./static/css/portfolio.css?v=42">
+     <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+     <script>window.echarts || document.write('<script src="./static/vendor/echarts.min.js"><\/script>')</script>
+@@ -63,7 +63,7 @@
+             </div>
+             <div class="actions pf-actions">
+                 <a class="pf-compliance-dot pf-compliance-unknown" id="pf-compliance-dot" href="decision.html#compliance-engine-panel" data-state="loading"
+-                   title="合规结论来自合规引擎（与决策中枢同一结果）；点击查看决策中枢合规区"><span id="pf-compliance-text">合规加载中</span><span data-ac-authority-tag></span><small id="pf-compliance-time" class="pf-compliance-time"></small></a>
++                   title="合规结论来自合规引擎（与决策中枢同一结果）；点击查看决策中枢合规区"><span id="pf-compliance-text">合规加载中</span><span data-ac-authority-tag></span><small id="pf-compliance-time" class="pf-compliance-time"></small><small id="pf-compliance-note" class="pf-compliance-note"></small></a>
+                 <button class="btn btn-import" id="import-btn" data-ac-account-write="import">导入持仓</button>
+                 <span class="pf-authority-note" id="pf-authority-note" hidden></span>
+                 <input type="file" id="import-file-input" accept=".txt,.csv,.xls" style="display:none;">
+@@ -80,36 +80,43 @@
+                     <div class="pf-hero-left">
+                         <div class="pf-hero-label">总资产</div>
+                         <div class="pf-hero-nav" id="nav-val">--</div>
+-                        <div class="pf-hero-sub" id="pf-hero-sub">组合持仓 <span id="pos-count">0</span> 只 · 当前仓位 <b id="total-position-weight">--</b>% · 现金占比 <span id="cash-weight">--</span>% · <span id="pf-pos-asof"></span></div>
++                        <div class="pf-hero-sub" id="pf-hero-sub"><span id="pos-count">0</span> 只持仓 · 当前仓位 <b id="total-position-weight">--</b>% · 现金 <span id="cash-weight">--</span>%</div>
++                        <span class="ac-asof" id="pf-pos-asof"></span>
++                        <!-- 2026-11-04 视觉轮: 执行目标只读决策中枢同一接口 (/decision/hub), 不另算、不算差额; 不可用 "--" -->
++                        <div class="pf-exec-line"><span class="pf-exec-label" data-ac-authority-tag>执行目标</span> <b id="pf-exec-target">--</b> · 来自决策中枢 <a href="decision.html">查看</a></div>
+                     </div>
+                     <div class="pf-hero-right">
+                         <div class="pf-sparkline-container" id="pf-sparkline" style="height: 60px; width: 200px;"></div>
+                     </div>
+                 </div>
++                <!-- 2026-11-04 视觉轮 V2: 五个 KPI 同一组件 (标签 → 数字 → 来源与时间行), 顺序 市值 / 现金 / 账户收益 / 当前回撤 / 组合波动 -->
+                 <div class="pf-hero-cards">
+-                    <div class="pf-kpi-card">
+-                        <span class="pf-kpi-label">现金</span>
+-                        <span class="pf-kpi-value" id="port-cash">--</span>
+-                    </div>
+                     <div class="pf-kpi-card">
+                         <span class="pf-kpi-label">持仓市值</span>
+                         <span class="pf-kpi-value" id="port-mv">--</span>
++                        <small class="pf-kpi-sub ac-asof" id="port-mv-sub"></small>
++                    </div>
++                    <div class="pf-kpi-card">
++                        <span class="pf-kpi-label">现金</span>
++                        <span class="pf-kpi-value" id="port-cash">--</span>
++                        <small class="pf-kpi-sub ac-asof" id="port-cash-sub"></small>
+                     </div>
+                     <!-- 2026-11-03 组合页精简 P3: 三项只读唯一来源 (static/js/portfolio_kpis.js); 原 ROI / 120D 波动 / 夏普 / 最大回撤已删除 -->
+                     <div class="pf-kpi-card">
+                         <span class="pf-kpi-label">账户收益（剔除入出金）</span>
+                         <span class="pf-kpi-value" id="port-return">--</span>
+-                        <small class="pf-kpi-sub" id="port-return-sub"></small>
+-                    </div>
+-                    <div class="pf-kpi-card">
+-                        <span class="pf-kpi-label">组合波动（与合规同源）</span>
+-                        <span class="pf-kpi-value" id="port-vol">--</span>
+-                        <small class="pf-kpi-sub" id="port-vol-sub"></small>
++                        <small class="pf-kpi-sub ac-asof" id="port-return-sub"></small>
+                     </div>
+                     <div class="pf-kpi-card">
+                         <span class="pf-kpi-label" data-ac-authority-tag>当前回撤（回撤刹车）</span>
+                         <span class="pf-kpi-value" id="port-dd">--</span>
+-                        <small class="pf-kpi-sub" id="port-dd-sub"></small>
++                        <small class="pf-kpi-sub ac-asof" id="port-dd-sub"></small>
++                    </div>
++                    <div class="pf-kpi-card">
++                        <span class="pf-kpi-label">组合波动（与合规同源）</span>
++                        <span class="pf-kpi-value" id="port-vol">--</span>
++                        <small class="pf-kpi-sub ac-asof" id="port-vol-sub"></small>
++                        <span class="pf-kpi-tag" id="port-vol-tag"></span>
+                     </div>
+                 </div>
+                 <div class="pf-alert-strip" id="pf-alerts-hero"></div>
+@@ -118,7 +125,7 @@
+             <!-- ═══ ZONE 2: 持仓监控表 ═══ -->
+             <div class="glass-panel pf-positions-panel">
+                 <div class="pf-panel-header">
+-                    <h3>持仓明细</h3>
++                    <h3>持仓明细 <span class="pf-panel-sub">按市值降序</span></h3>
+                     <div class="pf-table-controls">
+                         <span class="pf-pos-count" id="pf-total-positions">0 只持仓</span>
+                     </div>
+@@ -128,15 +135,16 @@
+                     <table class="pf-table" id="pf-positions-table">
+                         <thead>
+                             <tr>
+-                                <th>证券代码</th>
++                                <th>代码</th>
+                                 <th>名称 / 行业</th>
+-                                <th>数量</th>
+-                                <th>成本价</th>
+-                                <th>现价</th>
+-                                <th>市值</th>
+-                                <th>仓位占比</th>
+-                                <th>浮动盈亏</th>
++                                <th class="num">数量</th>
++                                <th class="num">成本价</th>
++                                <th class="num">现价</th>
++                                <th class="num">市值</th>
++                                <th class="num">仓位占比</th>
++                                <th class="num">浮动盈亏</th>
+                             </tr>
++                            <tr class="pf-legend-row"><th colspan="8" class="pf-legend">价格来源：TS = Tushare 收盘价 · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格</th></tr>
+                         </thead>
+                         <tbody id="positions-body">
+                             <tr><td colspan="8" class="pf-table-empty">数据加载中...</td></tr>
+@@ -630,9 +638,10 @@
+     </div>
+ 
+     <script src="./static/js/portfolio_modules.js?v=1"></script>
+-    <script src="./static/js/portfolio_compliance.js?v=2"></script>
+-    <script src="./static/js/portfolio_kpis.js?v=3"></script>
+-    <script src="./static/js/portfolio_manager.js?v=52"></script>
++    <script src="./static/js/portfolio_compliance.js?v=3"></script>
++    <script src="./static/js/portfolio_kpis.js?v=4"></script>
++    <script src="./static/js/portfolio_view.js?v=1"></script>
++    <script src="./static/js/portfolio_manager.js?v=53"></script>
+     <script src="./static/js/lookthrough_panel.js?v=3"></script>
+     <script src="./static/js/decision_review_panel.js?v=3"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+diff --git a/quant_dashboard/static/css/portfolio.css b/quant_dashboard/static/css/portfolio.css
+index fe1b3f5..76d968a 100644
+--- a/quant_dashboard/static/css/portfolio.css
++++ b/quant_dashboard/static/css/portfolio.css
+@@ -520,6 +520,24 @@ textarea.pf-input { height: auto; padding: 6px 8px; }
+     #pf-decision-zone .dr-form { grid-template-columns: 1fr 1fr; }
+ }
+ 
++/* ── V2 第一屏: 执行目标行、KPI 来源行与状态标签、持仓表类型标签与图例 ── */
++.pf-hero .ac-asof { margin-top: 2px; }
++.pf-exec-line { margin-top: 4px; font-size: 0.72rem; color: var(--dc-text-muted); }
++.pf-exec-line b { color: var(--dc-text); font-weight: 600; }
++.pf-exec-line a { color: var(--dc-text-muted); text-decoration: underline; text-underline-offset: 2px; }
++.pf-kpi-sub.ac-asof { margin-top: 0; }
++.pf-kpi-sub .ac-tag { margin-right: 6px; }
++.pf-kpi-time { display: block; margin-top: 2px; }
++.pf-kpi-tag:empty { display: none; }
++.pf-kpi-tag .ac-tag { white-space: normal; }
++.pf-kpi-sub.ac-state-partial { padding: 4px 8px; font-size: 0.65rem; line-height: 1.45; color: var(--dc-text-2); }
++.pf-type-tag { display: inline-block; margin-left: 4px; padding: 0 5px; border: 1px solid var(--dc-line-strong); border-radius: 4px; font-size: 0.6rem; font-weight: 500; line-height: 1.5; color: var(--dc-text-muted); vertical-align: 1px; }
++.pf-table thead tr.pf-legend-row th { padding: 4px 10px 6px; font-size: 0.65rem; font-weight: 400; color: var(--dc-text-muted); white-space: normal; border-bottom: 1px solid var(--dc-line); }
++.pf-legend .ac-tag { font-size: 0.58rem; padding: 0 5px; }
++#pf-positions-table td.num .pf-weight-cell { align-items: flex-end; }
++#pf-positions-table .pf-weight-bar { width: 72px; }
++#pf-positions-table .pf-src-cost { margin-left: 4px; }
++
+ /* ── 响应式 (桌面窄屏) ── */
+ @media (max-width: 1200px) {
+     .pf-hero-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+diff --git a/quant_dashboard/static/js/portfolio_compliance.js b/quant_dashboard/static/js/portfolio_compliance.js
+index 881a45b..9f6e4c5 100644
+--- a/quant_dashboard/static/js/portfolio_compliance.js
++++ b/quant_dashboard/static/js/portfolio_compliance.js
+@@ -78,8 +78,11 @@
+         el.title = `${model.title}${readAt ? `｜读取于 ${hhmm(readAt)}` : ''}｜点击查看决策中枢合规区`;
+         const t = root.document.getElementById('pf-compliance-text');
+         const tm = root.document.getElementById('pf-compliance-time');
++        const nt = root.document.getElementById('pf-compliance-note');
+         if (t) t.textContent = model.text; else el.textContent = model.text;
+         if (tm) tm.textContent = readAt ? `读取于 ${hhmm(readAt)}` : '';
++        // 2026-11-04 视觉轮 V2: 不可用时直接写明"不代表通过" (不只在悬浮提示里)
++        if (nt) nt.textContent = model.state === 'unavailable' ? '不代表通过' : '';
+     }
+ 
+     function itemHtml(a) {
+diff --git a/quant_dashboard/static/js/portfolio_kpis.js b/quant_dashboard/static/js/portfolio_kpis.js
+index c9a19c7..1caa232 100644
+--- a/quant_dashboard/static/js/portfolio_kpis.js
++++ b/quant_dashboard/static/js/portfolio_kpis.js
+@@ -8,6 +8,11 @@
+  *   当前回撤  /api/v1/portfolio/vol-budget → waterfall[key=drawdown] (risk_state.drawdown_brake, 与合规 / 执行层同一份)
+  *   风险贡献  /api/v1/portfolio/vol-budget → portfolio.positions[].risk_share (替代原 120 日 MCTR)
+  * 原"建仓以来 ROI"(持仓成本口径)、120D 波动 / 夏普 / 最大回撤 (当前持仓回溯) 已删除。
++ * 2026-11-04 视觉轮 V2 (docs/PORTFOLIO_SLIMMING_PLAN.md 10.2 / 10.3):
++ *   - 账户收益按红涨绿跌 (.ac-up / .ac-down); "数据不足"用 .ac-state-partial 小块写明接口 note
++ *   - 当前回撤 / 组合波动数字中性; 回撤刹车档位标签与决策中枢跟踪止盈面板同一映射 (第 1 档 warn、第 2 档及以上阻断实底)
++ *   - 组合波动只写"目标 x%", 状态标签读合规「组合波动预算」检查项, 前端不比较
++ *   - 执行目标行: 读首页执行区同一接口 /api/v1/decision/hub (action_plan.execution_target), 不可用 "--", 不算差额
+  */
+ (function (root) {
+     'use strict';
+@@ -26,9 +31,9 @@
+ 
+     /** /portfolio/returns 的 account → {value, sub, title}。 */
+     function returnModel(acc) {
+-        if (!acc || typeof acc !== 'object') return { value: '数据不足', sub: '收益接口不可用', title: '' };
++        if (!acc || typeof acc !== 'object') return { value: '数据不足', sub: '收益接口不可用', title: '', partial: true, dir: null };
+         if (acc.status !== 'ok' || num(acc.twr) === null) {
+-            return { value: '数据不足', sub: acc.note || acc.status || '不能计算', title: acc.note || '' };
++            return { value: '数据不足', sub: acc.note || acc.status || '不能计算', title: acc.note || '', partial: true, dir: null };
+         }
+         const parts = [`${md(acc.from)} 收盘 → ${md(acc.to)} 收盘`];
+         if (acc.from && acc.from > RULE_START) parts.push(`${md(RULE_START)} 收盘快照缺失，自 ${md(acc.from)} 起`);
+@@ -37,7 +42,7 @@
+             ? `区间 ${signed(acc.twr_range[0])} ~ ${signed(acc.twr_range[1])}；` : '';
+         const inferred = acc.coverage_inferred_to
+             ? `；入出金覆盖末端按交割单导出日推定（至 ${md(acc.coverage_inferred_to)}，文件中该段无记录）` : '';
+-        return { value: signed(acc.twr), sub: parts.join(' · '),
++        return { value: signed(acc.twr), sub: parts.join(' · '), dir: acc.twr > 0 ? 'up' : acc.twr < 0 ? 'down' : 'flat',
+                  title: `整账户时间加权收益（含现金，剔除入出金）；${range}${acc.twr_note || ''}${inferred}` };
+     }
+ 
+@@ -58,9 +63,33 @@
+         const tier = Number.isInteger(row.tier) ? row.tier : null;
+         const tierText = tier === null ? '档位未知' : tier === 0 ? '回撤刹车未触发' : `回撤刹车第 ${tier} 档`;
+         return { value: dd === null ? '--' : `-${Math.abs(dd * 100).toFixed(1)}%`, sub: tierText,
++                 tag: { text: tierText, cls: tierTagClass(tier) }, asof: row.asof || '',
+                  title: `风险资产时间加权净值自高水位的当前回撤（与合规、执行层同一份回撤刹车状态）${row.asof ? `；${row.asof}` : ''}` };
+     }
+ 
++    /** 回撤刹车档位 → 状态标签类 (与决策中枢跟踪止盈面板 TIER_CLS ['ok','warm','hot','hot'] 同一映射)。 */
++    function tierTagClass(tier) {
++        if (!Number.isInteger(tier)) return 'ac-tag-info';
++        return tier >= 2 ? 'ac-tag-block' : tier === 1 ? 'ac-tag-warn' : 'ac-tag-pass';
++    }
++
++    /** 合规「组合波动预算」检查项 → 状态标签 (只读结果, 前端不比较)。 */
++    function volTagModel(compliance) {
++        const c = ((compliance && compliance.checks) || []).find(r => r && r.rule_id === 'vol_budget');
++        if (!c || typeof c.passed !== 'boolean') return null;
++        if (c.passed) return { text: '组合波动预算 · 通过', cls: 'ac-tag-pass', title: c.detail || '' };
++        return c.severity === 'hard_block'
++            ? { text: '组合波动预算 · 硬阻断', cls: 'ac-tag-block', title: c.detail || '' }
++            : { text: '组合波动预算 · 警告', cls: 'ac-tag-warn', title: c.detail || '' };
++    }
++
++    /** /decision/hub → 执行目标 (全站唯一仓位数字); 不可用 null。 */
++    function execTargetModel(hub) {
++        const h = hub && hub.data && hub.data.action_plan ? hub.data : hub;
++        const t = num(h && h.action_plan && h.action_plan.execution_target);
++        return t === null ? null : t;
++    }
++
+     /** vol-budget 视图 → 风险贡献行 (risk_share 降序)。 */
+     function riskRows(view) {
+         const pos = ((view && view.portfolio) || {}).positions || [];
+@@ -80,11 +109,39 @@
+             `</tbody></table><p class="lt-note">来源：组合波动预算（${esc(p.method || '250 日等权波动 + 收缩相关矩阵')}${p.as_of ? `，截至 ${esc(p.as_of)}` : ''}），与合规同一计算；各标的合计 100%。</p>`;
+     }
+ 
++    const DIR_CLS = { up: 'ac-up', down: 'ac-down', flat: 'ac-flat' };
+     function setCard(prefix, m) {
+         const d = root.document;
+         const v = d.getElementById(prefix), s = d.getElementById(`${prefix}-sub`);
+-        if (v) { v.textContent = m.value; v.title = m.title || ''; }
+-        if (s) s.textContent = m.sub || '';
++        if (v) {
++            v.textContent = m.value; v.title = m.title || '';
++            v.className = `pf-kpi-value${m.dir ? ` ${DIR_CLS[m.dir]}` : ''}`;   // 只有账户收益带涨跌方向
++        }
++        if (!s) return;
++        s.className = m.partial ? 'pf-kpi-sub ac-state-partial' : 'pf-kpi-sub ac-asof';
++        if (m.tag) {
++            s.innerHTML = `<span class="ac-tag ${m.tag.cls}">${esc(m.tag.text)}</span>${m.asof ? `<span class="pf-kpi-time">${esc(m.asof)}</span>` : ''}`;
++        } else {
++            s.textContent = m.sub || '';
++        }
++    }
++
++    function setVolTag(compliance) {
++        const el = root.document && root.document.getElementById('port-vol-tag');
++        if (!el) return;
++        const t = volTagModel(compliance);
++        el.innerHTML = t ? `<span class="ac-tag ${t.cls}" title="${esc(t.title)}">${esc(t.text)}</span>` : '';
++    }
++
++    async function loadExecTarget() {
++        const el = root.document && root.document.getElementById('pf-exec-target');
++        let t = null;
++        try {
++            const r = await root.fetch('/api/v1/decision/hub');
++            if (r.ok) t = execTargetModel(await r.json());
++        } catch (e) { t = null; }
++        if (el) el.textContent = t === null ? '--' : `${Number(t.toFixed(1))}%`;
++        return t;
+     }
+ 
+     async function getJson(url) {
+@@ -104,8 +161,13 @@
+         setCard('port-dd', drawdownModel(vb));
+         const rt = root.document.getElementById('pf-risk-contrib');
+         if (rt) rt.innerHTML = riskTableHtml(vb);
++        const pc = root.PfCompliance;
++        setVolTag(pc && pc.last ? pc.last() : null);
+         return { ret, vb };
+     }
+ 
+-    root.PfKpis = { returnModel, volModel, drawdownModel, riskRows, riskTableHtml, load, RULE_START };
++    if (root.addEventListener) root.addEventListener('pf:compliance', e => setVolTag(e.detail));
++
++    root.PfKpis = { returnModel, volModel, drawdownModel, tierTagClass, volTagModel, execTargetModel, loadExecTarget,
++                    riskRows, riskTableHtml, load, RULE_START };
+ })(typeof window !== 'undefined' ? window : globalThis);
+diff --git a/quant_dashboard/static/js/portfolio_manager.js b/quant_dashboard/static/js/portfolio_manager.js
+index 7be9ce0..be724d6 100644
+--- a/quant_dashboard/static/js/portfolio_manager.js
++++ b/quant_dashboard/static/js/portfolio_manager.js
+@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
+             if (result.status === 'success') {
+                 renderValuation(result.data);
+                 if (window.PfKpis) window.PfKpis.load();   // 账户收益 / 组合波动 / 当前回撤 / 风险贡献 (唯一来源)
++                if (window.PfKpis) window.PfKpis.loadExecTarget();   // 执行目标: 决策中枢同一接口 (/decision/hub), 只读
+                 // 2026-11-03 组合页精简 P4: 关闭的模块不发请求 (config/portfolio_modules.json)
+                 pmReady().then(() => {
+                     if (pmOn('sector_pie')) loadRisk();
+@@ -161,10 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
+     }
+ 
+     function renderValuation(data) {
+-        // Hero KPI — 防御性: 兼容新旧 API
+-        document.getElementById('port-cash').textContent = '¥ ' + (data.cash || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+-        document.getElementById('port-mv').textContent = '¥ ' + (data.market_value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+-        document.getElementById('nav-val').textContent = '¥ ' + (data.total_asset || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
++        // 2026-11-04 视觉轮 V2: 总资产为唯一大数字 (中性色); 金额千分位; KPI 来源行直接可见
++        const yuan = v => '¥ ' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++        document.getElementById('port-cash').textContent = yuan(data.cash);
++        document.getElementById('port-mv').textContent = yuan(data.market_value);
++        document.getElementById('nav-val').textContent = yuan(data.total_asset);
+         document.getElementById('pos-count').textContent = data.position_count || data.positions.length || 0;
+ 
+         const cashWeight = data.cash_weight != null ? data.cash_weight : (data.total_asset > 0 ? (data.cash / data.total_asset * 100) : 0);
+@@ -183,65 +185,28 @@ document.addEventListener('DOMContentLoaded', function () {
+ 
+         // 2026-11-03 组合页精简 P3: 原「建仓以来 ROI」(持仓成本口径) 已删除; 账户收益见 static/js/portfolio_kpis.js
+ 
+-        // Position count badge
++        // KPI 来源与时间行 (持仓市值 / 现金)
++        if (window.PfView) {
++            const src = window.PfView.kpiSources(data);
++            const mvSub = document.getElementById('port-mv-sub'), cashSub = document.getElementById('port-cash-sub');
++            if (mvSub) mvSub.textContent = src.mv;
++            if (cashSub) cashSub.textContent = src.cash;
++        }
++
+         document.getElementById('pf-total-positions').textContent = (data.position_count || data.positions.length) + ' 只持仓';
+ 
+-        // Render table
+         renderPositionsTable(data.positions);
+ 
+         // 数据质量提示 (非风险判定; 风险结论只来自合规引擎)
+         if (window.PfCompliance) window.PfCompliance.setDataNotes(window.PfCompliance.dataQualityNotes(data));
+     }
+ 
++    // 2026-11-04 视觉轮 V2: 持仓表由 static/js/portfolio_view.js 渲染 (按市值降序、类型标签、ETF 价格 3 位、
++    // 中性占比条以最大持仓为满格、红涨绿跌、成本价兜底 warn 标签、名称与行业转义)
+     function renderPositionsTable(positions) {
+         const body = document.getElementById('positions-body');
+-        body.innerHTML = '';
+-
+-        if (positions.length === 0) {
+-            body.innerHTML = '<tr><td colspan="8" class="pf-table-empty">当前无持仓</td></tr>';
+-            return;
+-        }
+-
+-        positions.forEach(pos => {
+-            const row = document.createElement('tr');
+-            const pnlCls = pnlClass(pos.pnl);   // 金额与百分比同色 (红涨绿跌, 0 中性)
+-            const parts = pos.ts_code.split('.');
+-            const codeNum = parts[0];
+-            const codeExt = parts.length > 1 ? parts[1] : '';
+-
+-            // 仓位占比进度条: 中性色, 不随数值变色 (删除前端 >15% / >10% 阈值)
+-            const weight = pos.weight != null ? pos.weight : 0;
+-
+-            row.innerHTML = `
+-                <td>
+-                    <div class="pf-code-cell">
+-                        <span class="pf-code-num">${codeNum}</span>
+-                        <span class="pf-code-ext">.${codeExt}</span>
+-                    </div>
+-                </td>
+-                <td>
+-                    <div class="pf-name-cell">${pos.name}</div>
+-                    <span class="pf-sector-tag">${pos.industry || '未知行业'}</span>
+-                </td>
+-                <td class="pf-mono">${pos.amount.toLocaleString()}</td>
+-                <td class="pf-mono pf-dim">¥${pos.cost.toFixed(2)}</td>
+-                <td class="pf-mono">¥${pos.price.toFixed(2)}${pos.price_source === 'broker' ? '<span class="pf-src-tag pf-src-broker" title="券商导入报价 (当日优先)">券商</span>' : pos.price_source === 'cost' ? '<span class="pf-src-tag pf-src-cost" title="现价缺失, 以成本价兜底: 市值与盈亏不真实">成本价兜底</span>' : '<span class="pf-src-tag pf-src-ts" title="Tushare 收盘价">TS</span>'}</td>
+-                <td class="pf-mono">¥${pos.market_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+-                <td>
+-                    <div class="pf-weight-cell">
+-                        <span class="pf-weight-num">${weight.toFixed(1)}%</span>
+-                        <div class="pf-weight-bar">
+-                            <div class="pf-weight-fill" style="width: ${Math.min(weight * 5, 100)}%;"></div>
+-                        </div>
+-                    </div>
+-                </td>
+-                <td class="${pnlCls} pf-pnl-cell">
+-                    <span class="pf-pnl-val">${pos.pnl > 0 ? '+' : ''}${pos.pnl.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+-                    <span class="pf-pnl-pct">${pos.pnl_pct > 0 ? '+' : ''}${pos.pnl_pct.toFixed(2)}%</span>
+-                </td>
+-            `;
+-            body.appendChild(row);
+-        });
++        body.innerHTML = window.PfView ? window.PfView.positionsBodyHtml(positions || [])
++            : '<tr><td colspan="8" class="pf-table-empty">持仓表组件未加载</td></tr>';
+     }
+ 
+     // ════════════════════════════════════
+diff --git a/quant_dashboard/static/js/portfolio_view.js b/quant_dashboard/static/js/portfolio_view.js
+new file mode 100644
+index 0000000..ffd98fa
+--- /dev/null
++++ b/quant_dashboard/static/js/portfolio_view.js
+@@ -0,0 +1,119 @@
++/**
++ * 组合页持仓表展示 (2026-11-04 视觉轮 V2, docs/PORTFOLIO_SLIMMING_PLAN.md 10.3 / 10.5)
++ * ============================================================================
++ * 纯展示函数, 只读 /portfolio/valuation 已有字段, 不改任何数字:
++ *   - 默认按市值降序 (只改显示顺序)
++ *   - 类型标签 ETF / 科创 / 创业 / 主板 / 北交 (接口无类型字段, 按代码前缀判断, 规则见 10.5)
++ *   - 价格精度: ETF 成本价 / 现价 3 位, 其余 2 位
++ *   - 仓位占比条: 中性色, 以最大持仓为满格; weight 缺失显示 "--"
++ *   - 浮动盈亏: 金额与百分比同色, 红涨绿跌, 0 中性 (不整行着色)
++ *   - 价格来源: 成本价兜底 = warn 标签 (市值与盈亏不真实); 券商 / TS = info 小字
++ */
++(function (root) {
++    'use strict';
++
++    function esc(s) {
++        return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
++            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
++    }
++    const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null);
++
++    /** 代码 → 类型标签 (展示用)。 */
++    function instrumentType(tsCode) {
++        const [code = '', ex = ''] = String(tsCode || '').toUpperCase().split('.');
++        if (!/^\d{6}$/.test(code)) return null;
++        if ((ex === 'SH' && code[0] === '5') || (ex === 'SZ' && /^1[56]/.test(code))) return 'ETF';
++        if (ex === 'BJ' || /^(4|8|920)/.test(code)) return '北交';
++        if (/^68[89]/.test(code)) return '科创';
++        if (/^30[01]/.test(code)) return '创业';
++        if (/^(60[0135]|00[0-3])/.test(code)) return '主板';
++        return null;
++    }
++    const isEtf = tsCode => instrumentType(tsCode) === 'ETF';
++    /** 价格文本: ETF 3 位, 其余 2 位; 缺失 "--"。 */
++    function priceText(v, tsCode) {
++        const n = num(v);
++        return n === null ? '--' : n.toFixed(isEtf(tsCode) ? 3 : 2);
++    }
++    const money = v => (num(v) === null ? '--' : v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
++    const signed = (v, s) => `${v > 0 ? '+' : ''}${s}`;
++
++    /** 涨跌语义类: 正 → ac-up (红), 负 → ac-down (绿), 0 / 缺失 → ac-flat。 */
++    function pnlClass(v) {
++        const n = num(Number(v));
++        if (v == null || n === null || n === 0) return 'ac-flat';
++        return n > 0 ? 'ac-up' : 'ac-down';
++    }
++
++    /** 按市值降序 (不改原数组)。 */
++    function sortByMarketValue(positions) {
++        return (positions || []).slice().sort((a, b) => (num(b.market_value) ?? -Infinity) - (num(a.market_value) ?? -Infinity));
++    }
++    /** 占比条比例尺: 以最大持仓为满格。 */
++    function maxWeight(positions) {
++        return (positions || []).reduce((m, p) => Math.max(m, num(p.weight) ?? 0), 0);
++    }
++    function barWidth(weight, maxW) {
++        const w = num(weight);
++        if (w === null || !(maxW > 0)) return null;
++        return Math.max(0, Math.min(100, w / maxW * 100));
++    }
++
++    const SRC = {
++        cost: '<span class="ac-tag ac-tag-warn pf-src-cost" title="现价缺失，以成本价兜底：市值与盈亏不真实">成本价兜底</span>',
++        broker: '<span class="pf-src-tag" title="导入当日券商报价">券商</span>',
++        tushare: '<span class="pf-src-tag" title="Tushare 收盘价">TS</span>',
++    };
++    function sourceTag(src) { return SRC[src] || SRC.tushare; }
++
++    function weightCell(p, maxW) {
++        const w = num(p.weight);
++        if (w === null) return '<td class="num pf-weight-td"><span class="pf-weight-num">--</span></td>';
++        const width = barWidth(w, maxW);
++        return `<td class="num pf-weight-td"><div class="pf-weight-cell"><span class="pf-weight-num">${w.toFixed(1)}%</span>` +
++            `<div class="pf-weight-bar"><div class="pf-weight-fill" style="width:${width.toFixed(1)}%"></div></div></div></td>`;
++    }
++
++    /** 一行持仓 (桌面表格)。 */
++    function positionRowHtml(p, maxW) {
++        const [code, ex = ''] = String(p.ts_code || '').split('.');
++        const type = instrumentType(p.ts_code);
++        const cls = pnlClass(p.pnl);
++        const pnl = num(p.pnl), pct = num(p.pnl_pct);
++        return `<tr data-code="${esc(p.ts_code)}">
++            <td><div class="pf-code-cell"><span class="pf-code-num">${esc(code)}</span><span class="pf-code-ext">.${esc(ex)}</span></div></td>
++            <td><div class="pf-name-cell">${esc(p.name)}${type ? ` <span class="pf-type-tag">${type}</span>` : ''}</div>
++                <span class="pf-sector-tag">${esc(p.industry || '行业未知')}</span></td>
++            <td class="num pf-mono">${num(p.amount) === null ? '--' : p.amount.toLocaleString('en-US')}</td>
++            <td class="num pf-mono pf-dim">${priceText(p.cost, p.ts_code)}</td>
++            <td class="num pf-mono">${priceText(p.price, p.ts_code)}${sourceTag(p.price_source)}</td>
++            <td class="num pf-mono">${money(p.market_value)}</td>
++            ${weightCell(p, maxW)}
++            <td class="num pf-pnl-cell ${cls}"><span class="pf-pnl-val">${pnl === null ? '--' : signed(pnl, money(pnl))}</span>` +
++            `<span class="pf-pnl-pct">${pct === null ? '--' : signed(pct, `${pct.toFixed(2)}%`)}</span></td>
++        </tr>`;
++    }
++
++    /** 持仓表 tbody (按市值降序)。 */
++    function positionsBodyHtml(positions) {
++        const rows = sortByMarketValue(positions);
++        if (!rows.length) return '<tr><td colspan="8" class="pf-table-empty">当前无持仓</td></tr>';
++        const maxW = maxWeight(rows);
++        return rows.map(p => positionRowHtml(p, maxW)).join('');
++    }
++
++    /** KPI 来源行: 持仓市值 / 现金。 */
++    function kpiSources(data) {
++        const d = data || {};
++        const dates = (d.positions || []).map(p => String(p.price_as_of || '').replace(/-/g, '')).filter(x => x.length >= 8).sort();
++        const px = dates.length ? dates[dates.length - 1] : '';
++        const stmt = String(d.statement_date || '');
++        return {
++            mv: px ? `价格 ${px.slice(4, 6)}-${px.slice(6, 8)} 收盘` : '价格日期未知',
++            cash: `${stmt.length >= 10 ? `对账单 ${stmt.slice(5, 10)}` : '对账单日期未知'}${d.cash_basis ? ` · ${d.cash_basis}` : ''}`,
++        };
++    }
++
++    root.PfView = { esc, instrumentType, isEtf, priceText, pnlClass, sortByMarketValue, maxWeight, barWidth,
++                    positionRowHtml, positionsBodyHtml, kpiSources, money };
++})(typeof window !== 'undefined' ? window : globalThis);
+diff --git a/quant_dashboard/tests/test_export_coverage_frontend.cjs b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+index 63ae8fd..5b2f0f5 100644
+--- a/quant_dashboard/tests/test_export_coverage_frontend.cjs
++++ b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+@@ -61,6 +61,7 @@ assert.equal(m.sub, '10-30 收盘 → 11-04 收盘');
+ // 4) 版本
+ assert.match(read('decision.html'), /trailing_stop_panel\.js\?v=15"/);
+ assert.match(read('decision.html'), /trailing_stop\.css\?v=12"/);
+-assert.match(read('portfolio.html'), /portfolio_kpis\.js\?v=3"/);
++// 2026-11-04 组合页视觉轮 V2 改动 portfolio_kpis.js (收益涨跌色 / 回撤档位标签 / 执行目标行), 版本号 3 → 4
++assert.match(read('portfolio.html'), /portfolio_kpis\.js\?v=4"/);
+ assert.match(read('static/css/trailing_stop.css'), /\.ts-check \{/);
+ console.log('test_export_coverage_frontend: OK');
+diff --git a/quant_dashboard/tests/test_import_valuation_time.cjs b/quant_dashboard/tests/test_import_valuation_time.cjs
+index 1e94bf0..6810111 100644
+--- a/quant_dashboard/tests/test_import_valuation_time.cjs
++++ b/quant_dashboard/tests/test_import_valuation_time.cjs
+@@ -32,6 +32,6 @@ assert.deepEqual(picks, ['15:00', '11:30', '09:00']);
+ for (const p of picks) assert(re.test(p), p);
+ assert.match(pm, /importValInput\.value = b\.dataset\.valtime;\s+syncImportConfirm\(\)/);
+ assert.match(pm, /forEach\(b => b\.classList\.remove\('active'\)\)/);   // 重新打开时清除选中
+-// 2026-11-04 视觉轮 V1 改动 portfolio_manager.js (去 emoji / 涨跌语义类), 版本号 51 → 52
+-assert.match(html, /portfolio_manager\.js\?v=52"/);
++// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53
++assert.match(html, /portfolio_manager\.js\?v=53"/);
+ console.log('import valuation time OK');
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+index 33dd1c3..fd3d697 100644
+--- a/quant_dashboard/tests/test_portfolio_visual.cjs
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -150,4 +150,140 @@ const valIn = html.match(/<input type="time" id="import-valuation-time"[^>]*>/)[
+ assert(/\brequired\b/.test(valIn) && !/\bvalue=/.test(valIn), '估值时点 input 必填且无默认值');
+ assert(html.includes('class="pf-import-valtime-req">必填'));
+ 
+-console.log('portfolio visual OK');
++// ═══ V2 第一屏: 顶栏、核心资产区、持仓表 ═══
++// 7) 持仓表 (static/js/portfolio_view.js)
++const vctx = { console, Number, Math, String, Array, Object };
++vctx.globalThis = vctx;
++vm.createContext(vctx);
++vm.runInContext(read('static/js/portfolio_view.js'), vctx);
++const V = vctx.PfView;
++// 类型标签规则 (docs/PORTFOLIO_SLIMMING_PLAN.md 10.5): 接口无类型字段, 按代码前缀判断
++const TYPE_CASES = { '588000.SH': 'ETF', '510300.SH': 'ETF', '159995.SZ': 'ETF', '159516.SZ': 'ETF', '160632.SZ': 'ETF',
++    '688019.SH': '科创', '689009.SH': '科创', '300054.SZ': '创业', '301269.SZ': '创业',
++    '600584.SH': '主板', '601698.SH': '主板', '603986.SH': '主板', '605358.SH': '主板', '000001.SZ': '主板', '002156.SZ': '主板', '003816.SZ': '主板',
++    '830799.BJ': '北交', '920001.BJ': '北交', '430047.BJ': '北交', '204001.SH': null, 'abc': null };
++for (const [c, t] of Object.entries(TYPE_CASES)) assert.equal(V.instrumentType(c), t, c);
++// 价格精度: ETF 3 位, 个股 2 位
++assert.equal(V.priceText(0.836, '159995.SZ'), '0.836');
++assert.equal(V.priceText(1.34, '588000.SH'), '1.340');
++assert.equal(V.priceText(1.629, '588000.SH'), '1.629');
++assert.equal(V.priceText(207, '688019.SH'), '207.00');
++assert.equal(V.priceText(119.236, '688981.SH'), '119.24');
++assert.equal(V.priceText(null, '688981.SH'), '--');
++const POS = [
++    { ts_code: '688825.SH', name: '长鑫科技', industry: '半导体', amount: 451, cost: 41.492, price: 44.09, price_source: 'tushare', market_value: 19884.59, pnl: 1171.7, pnl_pct: 6.26, weight: 1.38 },
++    { ts_code: '588000.SH', name: '科创50ETF华夏', industry: '宽基-科创板', amount: 269200, cost: 1.629, price: 1.34, price_source: 'tushare', market_value: 360728, pnl: -77798.8, pnl_pct: -17.74, weight: 25.07 },
++    { ts_code: '159995.SZ', name: '<img src=x>芯片ETF', industry: '<b>半导体</b>', amount: 246200, cost: 1.055, price: 0.836, price_source: 'cost', market_value: 205823.2, pnl: 0, pnl_pct: 0, weight: null },
++];
++const body = V.positionsBodyHtml(POS);
++const order = [...body.matchAll(/data-code="([^"]+)"/g)].map(m => m[1]);
++assert.deepEqual(order, ['588000.SH', '159995.SZ', '688825.SH'], '默认按市值降序');
++const rowOf = code => body.slice(body.indexOf(`data-code="${code}"`), body.indexOf('</tr>', body.indexOf(`data-code="${code}"`)));
++assert(rowOf('588000.SH').includes('<span class="pf-type-tag">ETF</span>') && rowOf('688825.SH').includes('>科创<'));
++assert(rowOf('588000.SH').includes('>1.629<') && rowOf('588000.SH').includes('>1.340<'), 'ETF 成本价 / 现价 3 位');
++assert(rowOf('688825.SH').includes('>41.49<') && rowOf('688825.SH').includes('>44.09<'), '个股 2 位');
++// 盈亏: 正 → 红类, 负 → 绿类, 0 → 中性; 金额与百分比同一单元格同色, 不整行着色
++assert(/pf-pnl-cell ac-up/.test(rowOf('688825.SH')) && /pf-pnl-cell ac-down/.test(rowOf('588000.SH')) && /pf-pnl-cell ac-flat/.test(rowOf('159995.SZ')));
++assert(!/<tr[^>]*ac-(up|down)/.test(body), '不整行着色');
++// 占比条: 中性色、无内联颜色、不随数值变色; 以最大持仓为满格; weight 缺失 "--"
++assert(/style="width:100\.0%"/.test(rowOf('588000.SH')), '最大持仓满格');
++assert(/style="width:5\.5%"/.test(rowOf('688825.SH')), `比例尺 = weight / 最大 weight: ${rowOf('688825.SH')}`);
++assert(!/background|color/.test(body.replace(/class="[^"]*"/g, '')), '持仓表无内联颜色');
++assert(rowOf('159995.SZ').includes('<span class="pf-weight-num">--</span>') && !rowOf('159995.SZ').includes('0.0%'), 'weight 缺失显示 --');
++assert(V.barWidth(null, 25) === null && V.barWidth(12.5, 25) === 50);
++assert(!/weight\s*\*\s*5/.test(read('static/js/portfolio_view.js') + pm), '比例尺不再用 weight*5');
++// 价格来源: 成本价兜底 = warn 标签; 券商 / TS = info 小字; 名称、行业转义
++assert(rowOf('159995.SZ').includes('ac-tag ac-tag-warn pf-src-cost') && rowOf('159995.SZ').includes('成本价兜底'));
++assert(rowOf('588000.SH').includes('<span class="pf-src-tag" title="Tushare 收盘价">TS</span>'));
++assert(rowOf('159995.SZ').includes('&lt;img src=x&gt;') && rowOf('159995.SZ').includes('&lt;b&gt;半导体'));
++assert(!/>15|> 15|>10|> 10/.test(read('static/js/portfolio_view.js').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')), '前端无占比阈值');
++assert(html.includes('class="pf-legend"') && html.includes('成本价兜底'), '表头下图例直接可见');
++assert(html.indexOf('portfolio_view.js') > 0 && html.indexOf('portfolio_view.js') < html.indexOf('portfolio_manager.js'));
++
++// 8) 核心资产区: 五个 KPI 同一组件与顺序; 回撤 / 波动数字无涨跌类; 收益红涨绿跌; 无第二仓位数字
++const kpiOrder = [...html.matchAll(/<span class="pf-kpi-value" id="([\w-]+)"/g)].map(m => m[1]);
++assert.deepEqual(kpiOrder, ['port-mv', 'port-cash', 'port-return', 'port-dd', 'port-vol']);
++for (const id of kpiOrder) assert(html.includes(`id="${id}-sub"`), `${id} 缺来源与时间行`);
++assert(!/pf-gold/.test(html.slice(html.indexOf('pf-hero-zone'), html.indexOf('pf-positions-panel'))), '总资产 / 现金不用金色');
++const kctx = { console, Number, Math, String, Array, Object, Promise };
++const knodes = {};
++kctx.document = { getElementById: id => (knodes[id] = knodes[id] || { id, textContent: '', innerHTML: '', className: '', title: '' }) };
++kctx.window = kctx;
++vm.createContext(kctx);
++vm.runInContext(read('static/js/portfolio_kpis.js'), kctx);
++const K = kctx.PfKpis;
++const vb = { portfolio: { portfolio_vol: 0.4632, target_vol: 0.3 },
++             waterfall: [{ key: 'drawdown', dd: -0.2623, tier: 3, note: '净值回撤 26.2% · 三档 · 降至 25%', asof: '状态计算于 11-05 01:55' }] };
++const ddm = K.drawdownModel(vb), vom = K.volModel(vb);
++assert(!ddm.dir && !vom.dir, '回撤 / 波动数字不带涨跌方向');
++assert.equal(K.returnModel({ status: 'ok', from: '2026-10-30', to: '2026-11-04', twr: 0.1026 }).dir, 'up');
++assert.equal(K.returnModel({ status: 'ok', from: '2026-10-30', to: '2026-11-04', twr: -0.02 }).dir, 'down');
++assert.equal(K.returnModel({ status: 'ok', from: '2026-10-30', to: '2026-11-04', twr: 0 }).dir, 'flat');
++const insuff = K.returnModel({ status: 'insufficient_cash_coverage', note: '缺 10-31、11-03 交割单' });
++assert(insuff.partial && insuff.sub.includes('缺 10-31'), '数据不足: 小块写明接口 note');
++// 回撤刹车档位标签: 与决策中枢跟踪止盈面板同一映射 (TIER_CLS = ok / warm / hot / hot)
++assert.deepEqual([0, 1, 2, 3, null].map(K.tierTagClass), ['ac-tag-pass', 'ac-tag-warn', 'ac-tag-block', 'ac-tag-block', 'ac-tag-info']);
++assert(/const TIER_CLS = \['ok', 'warm', 'hot', 'hot'\]/.test(read('static/js/decision/trailing_stop_panel.js')), '决策中枢档位映射变了, 同步核对');
++assert.equal(ddm.tag.text, '回撤刹车第 3 档');
++// 组合波动: 只写目标, 状态标签读合规「组合波动预算」检查项
++assert.equal(vom.sub, '目标 30% · 250 日估计');
++const vchk = (passed, severity) => ({ checks: [{ rule_id: 'vol_budget', passed, severity, detail: 'd' }] });
++assert.equal(K.volTagModel(vchk(false, 'soft_warn')).cls, 'ac-tag-warn');
++assert.equal(K.volTagModel(vchk(false, 'hard_block')).cls, 'ac-tag-block');
++assert.equal(K.volTagModel(vchk(true, 'soft_warn')).cls, 'ac-tag-pass');
++assert.equal(K.volTagModel(null), null);
++// 执行目标: 首页执行区同一接口; 不可用 "--"; 带非权威标注位
++assert.equal(K.execTargetModel({ status: 'success', data: { action_plan: { execution_target: 25 } } }), 25);
++assert.equal(K.execTargetModel({ action_plan: { execution_target: 25 } }), 25);
++assert.equal(K.execTargetModel({ action_plan: { execution_target: null } }), null);
++assert.equal(K.execTargetModel(null), null);
++assert(read('static/js/portfolio_kpis.js').includes("root.fetch('/api/v1/decision/hub')"));
++assert(read('static/js/renderers.js').includes("fetch('/api/v1/decision/hub')"), '首页执行区接口变了, 同步核对');
++assert(/<span class="pf-exec-label" data-ac-authority-tag>执行目标<\/span> <b id="pf-exec-target">--<\/b>/.test(html));
++// 页面无第二仓位数字 ("仓位上限" / "降至")
++for (const f of ['portfolio.html', 'static/js/portfolio_kpis.js', 'static/js/portfolio_view.js', 'static/js/portfolio_compliance.js']) {
++    const src = f.endsWith('.html') ? visible : read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '');
++    assert(!src.includes('仓位上限') && !src.includes('降至'), `${f} 出现第二仓位数字字样`);
++}
++assert(!JSON.stringify(ddm).includes('降至'));
++
++// 9) 顶栏: 合规徽章状态样式; 不可用写明"不代表通过"; 导入为唯一实色按钮; 禁用态不用阻断色
++assert(/\.pf-compliance-block\s*\{[^}]*background:\s*var\(--status-block\)/.test(vcss));
++assert(/\.pf-compliance-warn\s*\{[^}]*var\(--status-warn\)/.test(vcss) && /\.pf-compliance-ok\s*\{[^}]*var\(--status-pass\)/.test(vcss));
++assert(/\.pf-compliance-unknown\s*\{[^}]*var\(--status-info\)/.test(vcss));
++assert(html.includes('id="pf-compliance-note"'));
++const cctx = { console, Date, Promise, JSON, String, Array, Object, Number };
++const cnodes = {};
++cctx.document = { getElementById: id => (cnodes[id] = cnodes[id] || { textContent: '', innerHTML: '', title: '', className: '', setAttribute() {} }) };
++cctx.fetch = async () => ({ ok: false, status: 500 });
++cctx.setTimeout = () => 0;
++cctx.window = cctx;
++vm.createContext(cctx);
++vm.runInContext(read('static/js/portfolio_compliance.js'), cctx);
++(async () => {
++    // 渲染: 回撤 / 波动数字 className 只有 pf-kpi-value; 账户收益带涨跌类; 回撤档位为状态标签
++    kctx.fetch = async url => ({ ok: true, json: async () => ({ status: 'success',
++        data: url.includes('returns') ? { account: { status: 'ok', from: '2026-10-30', to: '2026-11-04', twr: 0.1026 } } : vb }) });
++    await K.load();
++    assert.equal(knodes['port-dd'].className, 'pf-kpi-value', '当前回撤数字须中性色');
++    assert.equal(knodes['port-vol'].className, 'pf-kpi-value', '组合波动数字须中性色');
++    assert.equal(knodes['port-return'].className, 'pf-kpi-value ac-up');
++    assert(knodes['port-dd-sub'].innerHTML.includes('<span class="ac-tag ac-tag-block">回撤刹车第 3 档</span>'));
++    assert(!knodes['port-dd-sub'].innerHTML.includes('降至'));
++    kctx.fetch = async () => ({ ok: true, json: async () => ({ status: 'success', data: { action_plan: { execution_target: null } } }) });
++    await K.loadExecTarget();
++    assert.equal(knodes['pf-exec-target'].textContent, '--', '执行目标不可用显示 --');
++    kctx.fetch = async () => ({ ok: true, json: async () => ({ status: 'success', data: { action_plan: { execution_target: 25 } } }) });
++    await K.loadExecTarget();
++    assert.equal(knodes['pf-exec-target'].textContent, '25%');
++
++    await cctx.PfCompliance.load();
++    assert.equal(cnodes['pf-compliance-text'].textContent, '合规不可用');
++    assert.equal(cnodes['pf-compliance-note'].textContent, '不代表通过');
++    const solid = [...vcss.matchAll(/([^{}]+)\{[^}]*background:\s*var\(--dc-text\)/g)].map(m => m[1].trim());
++    assert(solid.every(s => /btn-import|pf-btn-primary/.test(s)), `实色按钮只有导入 / 主按钮: ${solid}`);
++    const locked = vcss.slice(vcss.indexOf('.topbar .btn.ac-write-locked'), vcss.indexOf('}', vcss.indexOf('.topbar .btn.ac-write-locked')));
++    assert(!locked.includes('status-block') && locked.includes('dashed'), '本机禁用态: 中性虚线, 不用阻断色');
++    assert(/ac-write-locked::after\s*\{\s*content:\s*"不可用"/.test(vcss));
++    console.log('portfolio visual OK');
++})().catch(e => { console.error(e); process.exit(1); });
+-- 
+2.43.0
+

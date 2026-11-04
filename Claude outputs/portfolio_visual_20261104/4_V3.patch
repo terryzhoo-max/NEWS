@@ -1,0 +1,644 @@
+From 2dc2bd36d9909fa4e07c7e97a10143bde1352867 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 13:05:00 -0600
+Subject: [PATCH 4/4] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=E8=A7=86?=
+ =?UTF-8?q?=E8=A7=89=E8=BD=AE=20V3=EF=BC=9A=E7=A9=BF=E9=80=8F=E3=80=81?=
+ =?UTF-8?q?=E5=86=B3=E5=AE=9A=E8=AE=B0=E5=BD=95=E3=80=81=E6=88=90=E4=BA=A4?=
+ =?UTF-8?q?=E8=AE=B0=E5=BD=95=E3=80=81=E5=AF=BC=E5=85=A5=E5=BC=B9=E7=AA=97?=
+ =?UTF-8?q?=E3=80=81=E6=89=8B=E6=9C=BA=E7=AB=AF?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ docs/PLAN_B_IMPLEMENTATION_LOG.md       | 11 ++++
+ portfolio.html                          | 24 +++++---
+ static/css/portfolio.css                | 75 +++++++++++++++++++++++
+ static/js/decision_review_panel.js      | 10 +--
+ static/js/lookthrough_panel.js          | 71 ++++++++++++++++++----
+ static/js/portfolio_kpis.js             | 11 ++--
+ static/js/portfolio_manager.js          | 44 ++++++++++----
+ static/js/portfolio_view.js             | 51 +++++++++++++++-
+ tests/test_export_coverage_frontend.cjs |  4 +-
+ tests/test_import_valuation_time.cjs    |  4 +-
+ tests/test_portfolio_visual.cjs         | 81 +++++++++++++++++++++++++
+ 11 files changed, 339 insertions(+), 47 deletions(-)
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index e65bfbc..1f886bd 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1614,3 +1614,14 @@ node tests\test_decision_review_panel.cjs
+ - 版本号：portfolio.css 41→42，portfolio_manager.js 52→53，portfolio_kpis.js 3→4，portfolio_compliance.js 2→3，新增 portfolio_view.js?v=1。断言同步：`test_import_valuation_time.cjs`（manager v=53）、`test_export_coverage_frontend.cjs`（kpis v=4），原因：本提交改动这两个文件。
+ - 测试：`test_portfolio_visual.cjs` 增加类型标签规则表、价格精度、市值降序、盈亏方向与不整行着色、占比条比例尺与缺失、成本兜底标签、转义、KPI 顺序与来源行、回撤 / 波动无涨跌类、档位映射与决策中枢一致、波动标签读合规、执行目标接口与 "--"、无"仓位上限 / 降至"、徽章样式与"不代表通过"、唯一实色按钮、禁用态非阻断色。前端 35 个 `.cjs` 全部通过。
+ - 5 项核对：只改展示；执行目标、合规、跟踪止盈、买入门控、当前仓位、三个 KPI 数字、持仓只数与总市值未改。
++
++### V3 · 下半页（穿透、决定记录、成交记录、导入弹窗、手机端）
++- 穿透：合规判定行移到折叠区外，作为本区第一信息（状态标签读合规检查项：硬阻断 / 警告 / 通过 + 主题读数 + "唯一判定"），下一行行业拆分，口径不一致 warn；`basis_note` 未写行业未知时补"按 ETF 分列"小字。行业 / 公司暴露改中性水平条（降序，已知行业取前 8 + "其余 N 个行业"），"行业未知"不参与截断、始终末行（`--dc-data-dim` + "未知"标签，0% 也单列）。风险贡献改为仓位占比 / 风险占比两列并排中性条（同一比例尺，无颜色阈值）。压力情景标"条件估计 · 非预测"，数字中性。折叠标题 CSS chevron、整行可点。
++- 决定记录：采用 / 未采用 / 暂不行动为中性文字标签；"不足以评价"为 info 标签；假设对照中性；表单控件同高（30px）、按钮 `pf-btn`；"显示金额"保留、默认隐藏。
++- 成交记录：改表格（日期 / 方向 / 名称代码 / 数量 / 价格 / 金额 / 费用，数字右对齐千分位，ETF 价格 3 位）；买入 / 卖出为中性描边标签。
++- 导入弹窗：对账单日期 `.ac-asof`；（V1 已去 emoji / TXT → SYSTEM / CANCEL、必填标签、确认按钮禁用虚线、快捷时点选中 `--dc-line-strong` 实底）。
++- 手机 375：首屏总资产、当前仓位、合规徽章（徽章整行置顶）；KPI 两列、数字不换行；持仓表改卡片列表（名称 + 代码 + 类型 / 市值 + 占比 / 盈亏%，点开看行业、数量、成本价、现价、盈亏金额），不横向滚动；不到 2% 的持仓合并为"其余 N 只 · 合计 x%"默认收起（常量 `MOBILE_GROUP_BELOW_PCT = 2`，注明展示用、非风险阈值；成本价兜底与 weight 缺失不参与；桌面不合并）；穿透区手机默认折叠（合规行在折叠区外）。
++- 高度：云端用同形状夹具渲染（非服务器数据）桌面 3,275 → 2,820px、手机 5,626 → 2,098px；服务器实测待部署后经隧道复核（改前 3,451 / 6,253px）。
++- 版本号：portfolio.css 42→43，portfolio_view.js 1→2，portfolio_manager.js 53→54，portfolio_kpis.js 4→5，lookthrough_panel.js 3→4，decision_review_panel.js 3→4；`test_import_valuation_time.cjs`（v=54）、`test_export_coverage_frontend.cjs`（v=5）断言同步，原因同上。
++- 测试：`test_portfolio_visual.cjs` 增加行业未知不截断且末行、无未知时也单列、穿透无颜色、合规行状态标签与位置、按 ETF 未知小字、风险贡献并排条、压力中性、chevron、决定记录中性 / info 标签、成交记录中性方向标签与价格精度、导入弹窗、手机两列 KPI / 卡片 / 合并规则 / 穿透默认折叠。前端 35 个 `.cjs` 全部通过。
++- 5 项核对：只改展示；执行目标、合规、跟踪止盈、买入门控、当前仓位、三个 KPI 数字、持仓只数与总市值未改。
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index a73a2b9..ea0774e 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -10,7 +10,7 @@
+ 
+     <link rel="stylesheet" href="./static/css/styles.css?v=12">
+     <link rel="stylesheet" href="./static/css/visual_excellence.css?v=3">
+-    <link rel="stylesheet" href="./static/css/portfolio.css?v=42">
++    <link rel="stylesheet" href="./static/css/portfolio.css?v=43">
+     <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+     <script>window.echarts || document.write('<script src="./static/vendor/echarts.min.js"><\/script>')</script>
+@@ -147,10 +147,13 @@
+                             <tr class="pf-legend-row"><th colspan="8" class="pf-legend">价格来源：TS = Tushare 收盘价 · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格</th></tr>
+                         </thead>
+                         <tbody id="positions-body">
+-                            <tr><td colspan="8" class="pf-table-empty">数据加载中...</td></tr>
++                            <tr><td colspan="8" class="pf-table-empty">数据加载中…</td></tr>
+                         </tbody>
+                     </table>
+                 </div>
++                <!-- 2026-11-04 视觉轮 V3: 手机 375 卡片列表 (CSS 按宽度切换; 小仓位合并只在此处) -->
++                <div class="pf-cards" id="positions-cards"></div>
++                <div class="pf-cards-legend ac-asof">点开卡片看数量、成本价、现价与盈亏金额 · ETF 价格 3 位小数、个股 2 位</div>
+             </div>
+ 
+             <!-- ═══ ZONE 3: 穿透暴露与压力情景 (阶段3B-4, 只读; 2026-11-03 P4 上移、默认展开) ═══ -->
+@@ -159,13 +162,14 @@
+                     <h3>穿透暴露与压力情景 <span class="pf-panel-sub">ETF 成分 + 直接持股 → 公司 / 行业 · 未知单列 · 压力情景为条件估计</span></h3>
+                     <span class="pf-collapse-arrow pf-arrow-open" aria-hidden="true"></span>
+                 </div>
++                <!-- 2026-11-04 视觉轮 V3: 合规判定行是本区第一信息, 放在折叠区外 (手机端穿透默认折叠时仍可见) -->
++                <div id="lt-compliance" class="lt-compliance"></div>
+                 <div class="pf-collapsible-body pf-expanded" id="lookthrough-body">
+-                    <div id="lt-compliance" class="lt-compliance"></div>
+                     <div id="lt-lookthrough"><div class="pf-empty">加载中…</div></div>
+                     <details class="lt-risk-contrib"><summary>风险贡献（组合波动预算 · 与合规同源）</summary>
+                         <div id="pf-risk-contrib"><div class="pf-empty">加载中…</div></div>
+                     </details>
+-                    <h4>压力情景 (按穿透主题暴露)</h4>
++                    <h4>压力情景（按穿透主题暴露 · 条件估计 · 非预测）</h4>
+                     <div id="lt-stress"><div class="pf-empty">加载中…</div></div>
+                 </div>
+             </div>
+@@ -602,7 +606,7 @@
+                     <button type="button" class="pf-valtime-pick" data-valtime="09:00" title="开盘前导出 (持仓为上一交易日收盘)">09:00 开盘前</button>
+                 </div>
+                 <div class="pf-import-valtime-hint">收盘后导出填 15:00，盘中导出填实际时间</div>
+-                <div class="pf-import-valtime-date" id="import-statement-date"></div>
++                <div class="pf-import-valtime-date ac-asof" id="import-statement-date"></div>
+             </div>
+ 
+             <!-- 警告提示 -->
+@@ -639,11 +643,11 @@
+ 
+     <script src="./static/js/portfolio_modules.js?v=1"></script>
+     <script src="./static/js/portfolio_compliance.js?v=3"></script>
+-    <script src="./static/js/portfolio_kpis.js?v=4"></script>
+-    <script src="./static/js/portfolio_view.js?v=1"></script>
+-    <script src="./static/js/portfolio_manager.js?v=53"></script>
+-    <script src="./static/js/lookthrough_panel.js?v=3"></script>
+-    <script src="./static/js/decision_review_panel.js?v=3"></script>
++    <script src="./static/js/portfolio_kpis.js?v=5"></script>
++    <script src="./static/js/portfolio_view.js?v=2"></script>
++    <script src="./static/js/portfolio_manager.js?v=54"></script>
++    <script src="./static/js/lookthrough_panel.js?v=4"></script>
++    <script src="./static/js/decision_review_panel.js?v=4"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+ <script src="./static/js/authority_banner.js?v=1"></script><!-- 2026-11-04 非权威环境标注 (服务器不显示) -->
+ </body>
+diff --git a/quant_dashboard/static/css/portfolio.css b/quant_dashboard/static/css/portfolio.css
+index 76d968a..1cde1db 100644
+--- a/quant_dashboard/static/css/portfolio.css
++++ b/quant_dashboard/static/css/portfolio.css
+@@ -538,11 +538,86 @@ textarea.pf-input { height: auto; padding: 6px 8px; }
+ #pf-positions-table .pf-weight-bar { width: 72px; }
+ #pf-positions-table .pf-src-cost { margin-left: 4px; }
+ 
++/* ── V3 下半页: 穿透中性条、风险贡献并排条、决定记录、成交记录 ── */
++.lt-compliance { margin-top: 12px; }
++.lt-compliance .ac-tag { margin-right: 4px; }
++.lt-bars td { border-bottom: 0; padding-top: 3px; padding-bottom: 3px; }
++.lt-bars .lt-name { white-space: nowrap; }
++.lt-bar-td { width: 40%; }
++.lt-bar { display: inline-block; width: 100%; max-width: 160px; height: 6px; vertical-align: middle; background: var(--dc-track); border-radius: 2px; overflow: hidden; }
++.lt-bar i { display: block; height: 100%; background: var(--dc-data); }
++.lt-bar-dim i { background: var(--dc-data-dim); }
++.lt-unknown-row td, .lt-unknown-cell { color: var(--dc-data-dim); }
++.lt-unknown-row .lt-name { color: var(--dc-text-2); }
++.lt-rest-row td { color: var(--dc-text-muted); }
++.lt-risk-table .lt-pair { white-space: nowrap; }
++.lt-risk-table .lt-pair .lt-bar { width: 110px; margin-right: 8px; }
++.lt-risk-table .lt-pair .num { display: inline-block; min-width: 44px; text-align: right; }
++.lt-stress-num { color: var(--dc-text); }
++#pf-decision-zone .dr-form select.pf-input { height: 30px; }
++#pf-decision-zone .dr-hypo-items { color: var(--dc-text-2); }
++#pf-decision-zone .dr-hypo-num { font-weight: 600; color: var(--dc-text); }
++#pf-decision-zone .ac-tag { margin-right: 4px; }
++.pf-trades-table td { white-space: nowrap; }
++.pf-trades-table .pf-name-cell { display: inline; }
++.pf-side-tag { font-weight: 600; }
++.pf-cards, .pf-cards-legend { display: none; }
++
+ /* ── 响应式 (桌面窄屏) ── */
+ @media (max-width: 1200px) {
+     .pf-hero-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+ }
+ 
++/* ── 手机 375: 首屏总资产 / 当前仓位 / 合规徽章; KPI 两列; 持仓卡片列表不横向滚动 ── */
++@media (max-width: 768px) {
++    .pf-topbar { flex-wrap: wrap; gap: 8px; padding: 10px 12px !important; margin-bottom: 8px; }
++    .pf-title h2 { font-size: 1.05rem; }
++    .pf-actions { width: 100%; justify-content: flex-start; gap: 6px; }
++    .pf-actions .pf-compliance-dot { order: -1; width: 100%; box-sizing: border-box; }
++    .topbar .btn-import, .topbar .btn-sync { height: 30px !important; padding: 0 12px !important; font-size: 0.75rem !important; }
++    .pf-content { gap: 10px; padding: 0 0 80px; }
++    .pf-content .glass-panel, .pf-hero, .pf-positions-panel, .pf-history-panel { padding: 12px !important; }
++    .pf-hero-nav { font-size: 1.6rem; }
++    .pf-hero-sub { font-size: 0.75rem; }
++    .pf-hero-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
++    .pf-kpi-card { padding: 8px 10px; }
++    .pf-kpi-value { font-size: 1rem; white-space: nowrap; overflow: visible; }
++    .pf-panel-header h3 { font-size: 0.88rem; }
++    .pf-panel-header .pf-panel-sub { display: block; width: 100%; }
++    #pf-positions-table { display: none; }
++    .pf-positions-panel .pf-table-wrap { overflow: visible; }
++    .pf-cards { display: flex; flex-direction: column; }
++    .pf-cards-legend { display: block; margin-top: 6px; }
++    .pf-card { border-bottom: 1px solid var(--dc-line); }
++    .pf-card > summary {
++        list-style: none; cursor: pointer;
++        display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center;
++        padding: 8px 2px;
++    }
++    .pf-card > summary::-webkit-details-marker { display: none; }
++    .pf-card-name { min-width: 0; font-size: 0.8rem; color: var(--dc-text); overflow-wrap: anywhere; }
++    .pf-card-name b { font-weight: 600; }
++    .pf-card-mv { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.78rem; color: var(--dc-text-2); font-variant-numeric: tabular-nums; }
++    .pf-card-mv small { font-size: 0.65rem; color: var(--dc-text-muted); }
++    .pf-card-mv .pf-weight-bar { display: block; width: 56px; margin-top: 2px; }
++    .pf-card-mv .pf-weight-fill { display: block; }
++    .pf-card-pnl { min-width: 58px; text-align: right; font-size: 0.78rem; font-weight: 600; }
++    .pf-card-more { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 8px; padding: 6px 8px; background: var(--dc-surface-2); border-radius: 4px; font-size: 0.72rem; }
++    .pf-card-more dt { color: var(--dc-text-muted); }
++    .pf-card-more dd { margin: 0; text-align: right; color: var(--dc-text-2); }
++    .pf-card-group > summary { cursor: pointer; padding: 8px 2px; font-size: 0.78rem; color: var(--dc-text-2); border-bottom: 1px solid var(--dc-line); }
++    .pf-card-group > summary small { margin-left: 4px; color: var(--dc-text-muted); font-size: 0.65rem; }
++    .pf-card-group .pf-card > summary { padding-left: 10px; }
++    .pf-alert-item { padding: 6px 8px; font-size: 0.72rem; }
++    .lt-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++    #pf-lookthrough-zone .lt-table, #pf-decision-zone .dr-table, .pf-trades-table { display: block; overflow-x: auto; }
++    .lt-bar-td { width: 30%; }
++    #pf-decision-zone .dr-form { grid-template-columns: 1fr; }
++    #pf-decision-zone .dr-form .dr-wide { grid-column: span 1; }
++    #import-modal .pf-modal { padding: 14px; }
++}
++
++
+ /* 2026-11-03 组合页精简 P4: 模块开关 (config/portfolio_modules.json) */
+ .pm-off { display: none !important; }
+ 
+diff --git a/quant_dashboard/static/js/decision_review_panel.js b/quant_dashboard/static/js/decision_review_panel.js
+index 7a70665..07b957a 100644
+--- a/quant_dashboard/static/js/decision_review_panel.js
++++ b/quant_dashboard/static/js/decision_review_panel.js
+@@ -32,7 +32,7 @@
+         if (!r) return '<div class="pf-empty">复盘数据不可用</div>';
+         if (r.status !== 'ok') {
+             const hint = r.earliest_start ? `<div class="dr-sub">最早可用起点: ${esc(r.earliest_start)}</div>` : '';
+-            return `<div class="dr-insufficient"><b>不足以评价</b>: ${esc(r.reason || r.label || '')}${hint}</div>`;
++            return `<div class="dr-insufficient"><span class="ac-tag ac-tag-info">不足以评价</span> ${esc(r.reason || r.label || '')}${hint}</div>`;
+         }
+         const rows = (r.paths || []).map((p) => `<tr><td>${esc(p.label)}</td>
+             <td class="num ${signCls(p.return)}">${p.return == null ? '<span class="dr-sub">不比较</span>' : pct(p.return)}</td>
+@@ -53,7 +53,7 @@
+     function reviewCell(rv, show) {
+         if (!rv) return '<span class="dr-sub">—</span>';
+         if (rv.evaluation === 'not_applicable') return `<span class="dr-sub">${esc(rv.label)}</span>`;
+-        if (rv.status_eval === 'insufficient') return `<span class="dr-insufficient-inline">不足以评价</span>
++        if (rv.status_eval === 'insufficient') return `<span class="ac-tag ac-tag-info">不足以评价</span>
+             <div class="dr-sub">${esc(rv.reason || '')}</div>`;
+         if (rv.evaluation === 'executed_vs_not_trading') {
+             return `<b class="${signCls(rv.value_added)}">${pct(rv.value_added_pct_of_notional)}</b>
+@@ -64,7 +64,7 @@
+             const items = (rv.items || []).map((i) => `${esc(i.ts_code)} ${pct(i.price_change)}`
+                 + (i.if_executed == null ? '' : ` → 若执行 <b class="dr-hypo-num">${pct(i.if_executed)}</b>`))
+                 .join('<br>');
+-            return `<span class="dr-hypo">假设对照</span><div>${items}</div>`;
++            return `<span class="ac-tag">假设对照</span><div class="dr-hypo-items">${items}</div>`;
+         }
+         return '<span class="dr-sub">—</span>';
+     }
+@@ -73,10 +73,10 @@
+         if (!reviews || !reviews.length) return '<div class="pf-empty">暂无决定记录</div>';
+         const rows = reviews.map((r) => {
+             const st = STATUS[r.decision_status] || r.decision_status || '';
+-            const retro = r.retrospective ? ' <span class="dr-retro" title="事后补记, 不计入汇总">补记</span>' : '';
++            const retro = r.retrospective ? ' <span class="ac-tag dr-retro" title="事后补记, 不计入汇总">补记</span>' : '';
+             const linkBtn = ['adopted', 'planned'].includes(r.decision_status) && r.intent !== 'hold'
+                 ? `<button class="pf-btn pf-btn-sm dr-cand-btn" data-id="${esc(r.decision_id)}">成交关联</button>` : '';
+-            return `<tr data-id="${esc(r.decision_id)}"><td>${esc(r.decided_on)}</td><td>${esc(st)}${retro}</td>
++            return `<tr data-id="${esc(r.decision_id)}"><td>${esc(r.decided_on)}</td><td>${st ? `<span class="ac-tag">${esc(st)}</span>` : ''}${retro}</td>
+                 <td>${esc(INTENT[r.intent] || r.intent || '')}</td><td>${esc((r.codes || []).join(', '))}</td>
+                 <td class="dr-thesis" title="${esc(r.thesis || '')}">${esc((r.thesis || '').slice(0, 40))}</td>
+                 <td>${reviewCell(r, show)}</td><td>${linkBtn}</td></tr>
+diff --git a/quant_dashboard/static/js/lookthrough_panel.js b/quant_dashboard/static/js/lookthrough_panel.js
+index 4a12a92..648c9c5 100644
+--- a/quant_dashboard/static/js/lookthrough_panel.js
++++ b/quant_dashboard/static/js/lookthrough_panel.js
+@@ -24,6 +24,36 @@
+         unsupported_instrument: '不支持的品种',
+     };
+ 
++    // 2026-11-04 视觉轮 V3: 中性水平条 (从大到小); "行业未知"不截断, 始终排最后并标"未知"
++    const UNKNOWN_INDUSTRY = '行业未知';
++    const TOP_INDUSTRIES = 8;
++    function bar(pctVal, max, dim) {
++        const v = Number(pctVal);
++        const w = isFinite(v) && max > 0 ? Math.max(0, Math.min(100, v / max * 100)) : 0;
++        return `<span class="lt-bar${dim ? ' lt-bar-dim' : ''}"><i style="width:${w.toFixed(1)}%"></i></span>`;
++    }
++    /** 行业行: 已知行业按占比降序取前 N, "行业未知"不参与截断、始终在最后一行。 */
++    function industryRows(list) {
++        const all = (list || []).filter((r) => r && r.industry != null);
++        const known = all.filter((r) => r.industry !== UNKNOWN_INDUSTRY)
++            .sort((a, b) => Number(b.pct_of_total || 0) - Number(a.pct_of_total || 0));
++        const shown = known.slice(0, TOP_INDUSTRIES);
++        const rest = known.slice(TOP_INDUSTRIES).reduce((s, r) => s + Number(r.pct_of_total || 0), 0);
++        const unk = all.filter((r) => r.industry === UNKNOWN_INDUSTRY)
++            .reduce((s, r) => s + Number(r.pct_of_total || 0), 0);
++        const hasUnk = all.some((r) => r.industry === UNKNOWN_INDUSTRY);
++        return { shown, rest, restCount: Math.max(0, known.length - TOP_INDUSTRIES), unknown: hasUnk ? unk : 0, hasUnk };
++    }
++    function industryHtml(list) {
++        const r = industryRows(list);
++        const max = Math.max(...r.shown.map((x) => Number(x.pct_of_total || 0)), r.unknown, 0.0001);
++        const row = (name, v, cls, extra) => `<tr class="${cls}"><td class="lt-name">${name}${extra || ''}</td>` +
++            `<td class="lt-bar-td">${bar(v, max, cls === 'lt-unknown-row')}</td><td class="num">${pct(v, 2)}</td></tr>`;
++        return r.shown.map((x) => row(esc(x.industry), x.pct_of_total, '')).join('') +
++            (r.restCount ? row(`其余 ${r.restCount} 个行业`, r.rest, 'lt-rest-row') : '') +
++            row(UNKNOWN_INDUSTRY, r.unknown, 'lt-unknown-row', ' <span class="ac-tag ac-tag-info">未知</span>');
++    }
++
+     function renderLookthrough(d) {
+         if (!d || d.status !== 'ok') {
+             return `<div class="pf-empty">${d && d.status === 'empty' ? '无持仓' : '穿透数据不可用'}</div>`;
+@@ -45,13 +75,16 @@
+                     <div class="lt-kpi-value">${(d.overlap_companies || []).length}</div>
+                     <div class="lt-kpi-sub">出现在多只 ETF/直接持股</div></div>
+             </div>`;
+-        const inds = (d.industries || []).slice(0, 8).map((r) =>
+-            `<tr><td>${esc(r.industry)}</td><td class="num">${pct(r.pct_of_total)}</td></tr>`).join('');
+-        const comps = (d.companies || []).slice(0, 10).map((c) => {
++        const inds = industryHtml(d.industries);
++        const top = (d.companies || []).slice().sort((a, b) => Number(b.pct_of_total || 0) - Number(a.pct_of_total || 0)).slice(0, 10);
++        const cmax = Math.max(...top.map((c) => Number(c.pct_of_total || 0)), 0.0001);
++        const comps = top.map((c) => {
+             const via = Array.from(new Set((c.sources || []).map((s) => s.via === 'direct' ? '直接持股' : s.via)));
+-            return `<tr${c.overlap ? ' class="lt-overlap"' : ''}><td>${esc(c.name)}<small> ${esc(c.code)}</small></td>
+-                <td>${esc(c.industry || '行业未知')}</td><td class="num">${pct(c.pct_of_total, 2)}</td>
+-                <td>${via.map(esc).join(' · ')}${c.overlap ? ' <span class="ac-tag" title="同一公司来自多个来源">重叠</span>' : ''}</td></tr>`;
++            const unk = !c.industry;
++            return `<tr${c.overlap ? ' class="lt-overlap"' : ''}><td class="lt-name">${esc(c.name)}<small> ${esc(c.code)}</small></td>
++                <td class="${unk ? 'lt-unknown-cell' : ''}">${unk ? '行业未知' : esc(c.industry)}</td>
++                <td class="lt-bar-td">${bar(c.pct_of_total, cmax, unk)}</td><td class="num">${pct(c.pct_of_total, 2)}</td>
++                <td class="lt-sub">${via.map(esc).join(' · ')}${c.overlap ? ' <span class="ac-tag" title="同一公司来自多个来源">重叠</span>' : ''}</td></tr>`;
+         }).join('');
+         const etfs = (d.etfs || []).map((e) => `<tr>
+                 <td>${esc(e.instrument_name || e.name || e.ts_code)}<small> ${esc(e.ts_code)}</small>
+@@ -64,9 +97,9 @@
+             `<li>${esc(u.name || u.ts_code)} ${esc(u.ts_code)} · ${wan(u.value)} · ${esc(REASON_LABEL[u.reason] || u.reason)}</li>`).join('');
+         return `${kpi}
+             <div class="lt-grid">
+-              <div><h4>行业暴露 (占总资产)</h4><table class="pf-table lt-table"><tbody>${inds}</tbody></table></div>
+-              <div><h4>前 10 大公司暴露</h4><table class="pf-table lt-table"><thead><tr><th>公司</th><th>行业</th>
+-                <th class="num">占总资产</th><th>来源</th></tr></thead><tbody>${comps}</tbody></table></div>
++              <div><h4>行业暴露（占总资产）</h4><table class="pf-table lt-table lt-bars"><tbody>${inds}</tbody></table></div>
++              <div><h4>前 10 大公司暴露</h4><table class="pf-table lt-table lt-bars"><thead><tr><th>公司</th><th>行业</th>
++                <th></th><th class="num">占总资产</th><th>来源</th></tr></thead><tbody>${comps}</tbody></table></div>
+             </div>
+             <h4>ETF 成分来源</h4>
+             <table class="pf-table lt-table"><thead><tr><th>ETF (正式名称)</th><th>跟踪指数</th><th>口径</th>
+@@ -107,11 +140,25 @@
+         if (m.level === 'near') return `接近 ${m.limit_pct}% 主题上限`;
+         return `在 ${m.limit_pct}% 主题上限以内`;
+     }
++    // 2026-11-04 视觉轮 V3: 合规行是本区第一信息 = 状态标签 (只读合规检查项结果) + 主题读数; 下一行行业拆分;
++    // 合规「行业未知」按 ETF 分列的占比用小字显示 (compliance metrics.unknown_industry)
++    function statusTag(compliance) {
++        const c = ((compliance && compliance.checks) || []).find((r) => r && r.rule_id === 'sector_concentration');
++        if (!c || typeof c.passed !== 'boolean') return '';
++        if (c.passed) return '<span class="ac-tag ac-tag-pass">通过</span> ';
++        return c.severity === 'hard_block' ? '<span class="ac-tag ac-tag-block">硬阻断</span> ' : '<span class="ac-tag ac-tag-warn">警告</span> ';
++    }
++    function unknownByEtf(m) {
++        const list = (m && m.unknown_industry) || [];
++        if (!list.length) return '<div class="lt-sub">穿透后行业未知（按 ETF）：0%</div>';
++        return `<div class="lt-sub">穿透后行业未知（按 ETF，不计入任何主题）：${list.map((e) => `${esc(e.name || e.ts_code)} ${pct(e.pct, 2)}`).join('，')}</div>`;
++    }
+     function complianceLineHtml(compliance, themeView) {
+         const m = sectorMetrics(compliance);
+         if (!m) return '<div class="lt-banner">合规主题集中度读数不可用，以决策中枢合规区为准；下方为穿透行业明细（读数，不作判定）。</div>';
+-        const head = `<b>合规判定</b> · 主题「${esc(m.top_theme)}」占账户 <b>${pct(m.top_pct)}</b>，${esc(levelText(m))}（唯一判定）` +
+-            (m.basis_note ? `<div class="lt-sub">口径：${esc(m.basis_note)}</div>` : '');
++        const head = `${statusTag(compliance)}<b>合规判定</b> · 主题「${esc(m.top_theme)}」占账户 <b>${pct(m.top_pct)}</b>，${esc(levelText(m))}（唯一判定）` +
++            (m.basis_note ? `<div class="lt-sub">口径：${esc(m.basis_note)}</div>` : '') +
++            (String(m.basis_note || '').includes('行业未知') ? '' : unknownByEtf(m));   // basis_note 已按 ETF 写明时不重复
+         const t = ((themeView && themeView.themes) || []).find((x) => x && x.theme === m.top_theme);
+         if (!t || Math.abs(Number(t.pct) - Number(m.top_pct)) > TOLERANCE_PP) {
+             const sum = t ? `行业合计 ${pct(t.pct)}，` : '';
+@@ -150,7 +197,7 @@
+         }
+     }
+ 
+-    global.LookthroughPanel = {renderLookthrough, renderStress, load, complianceLineHtml};
++    global.LookthroughPanel = {renderLookthrough, renderStress, load, complianceLineHtml, industryRows, UNKNOWN_INDUSTRY};
+     if (global.document && global.document.addEventListener && global.fetch) {
+         global.document.addEventListener('DOMContentLoaded', () => load(global.fetch.bind(global)));
+     }
+diff --git a/quant_dashboard/static/js/portfolio_kpis.js b/quant_dashboard/static/js/portfolio_kpis.js
+index 1caa232..31b2d2e 100644
+--- a/quant_dashboard/static/js/portfolio_kpis.js
++++ b/quant_dashboard/static/js/portfolio_kpis.js
+@@ -102,10 +102,13 @@
+         const rows = riskRows(view);
+         if (!rows.length) return '<div class="pf-empty">风险贡献不可用（波动预算无持仓数据）</div>';
+         const p = (view && view.portfolio) || {};
+-        return `<table class="pf-table lt-table"><thead><tr><th>标的</th><th class="num">占账户</th><th class="num">风险贡献占比</th></tr></thead><tbody>` +
+-            rows.map(r => `<tr><td>${esc(r.name)}<small> ${esc(r.code)}</small></td>` +
+-                `<td class="num">${r.weight === null ? '--' : `${r.weight.toFixed(1)}%`}</td>` +
+-                `<td class="num">${(r.share * 100).toFixed(1)}%</td></tr>`).join('') +
++        // 2026-11-04 视觉轮 V3: 仓位占比 / 风险占比两列并排中性条 (同一比例尺), 便于看出风险占比明显高于仓位占比的持仓; 不加颜色阈值
++        const max = Math.max(...rows.map(r => Math.max(r.weight || 0, r.share * 100)), 0.0001);
++        const cell = v => (v === null ? '<td class="num">--</td>'
++            : `<td class="lt-pair"><span class="lt-bar"><i style="width:${Math.min(100, v / max * 100).toFixed(1)}%"></i></span><span class="num">${v.toFixed(1)}%</span></td>`);
++        return `<table class="pf-table lt-table lt-risk-table"><thead><tr><th>标的</th><th>仓位占比（占账户）</th><th>风险占比（风险贡献）</th></tr></thead><tbody>` +
++            rows.map(r => `<tr><td class="lt-name">${esc(r.name)}<small> ${esc(r.code)}</small></td>` +
++                cell(r.weight) + cell(r.share * 100) + '</tr>').join('') +
+             `</tbody></table><p class="lt-note">来源：组合波动预算（${esc(p.method || '250 日等权波动 + 收缩相关矩阵')}${p.as_of ? `，截至 ${esc(p.as_of)}` : ''}），与合规同一计算；各标的合计 100%。</p>`;
+     }
+ 
+diff --git a/quant_dashboard/static/js/portfolio_manager.js b/quant_dashboard/static/js/portfolio_manager.js
+index be724d6..e77e043 100644
+--- a/quant_dashboard/static/js/portfolio_manager.js
++++ b/quant_dashboard/static/js/portfolio_manager.js
+@@ -207,6 +207,9 @@ document.addEventListener('DOMContentLoaded', function () {
+         const body = document.getElementById('positions-body');
+         body.innerHTML = window.PfView ? window.PfView.positionsBodyHtml(positions || [])
+             : '<tr><td colspan="8" class="pf-table-empty">持仓表组件未加载</td></tr>';
++        // 手机 375: 卡片列表 (CSS 按宽度切换, 不横向滚动)
++        const cards = document.getElementById('positions-cards');
++        if (cards && window.PfView) cards.innerHTML = window.PfView.positionCardsHtml(positions || []);
+     }
+ 
+     // ════════════════════════════════════
+@@ -465,20 +468,27 @@ document.addEventListener('DOMContentLoaded', function () {
+             container.innerHTML = '<div class="pf-history-empty">成交台账为空（在服务器导入交割单 / 历史成交）</div>';
+             return;
+         }
+-        const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+-        const fmt = (v, d = 2) => (typeof v === 'number' && isFinite(v)) ? v.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }) : '--';
++        // 2026-11-04 视觉轮 V3: 成交记录按持仓表规范 (表格、数字右对齐、千分位、ETF 价格 3 位);
++        // 买入 / 卖出用中性描边文字标签 (不用红买绿卖, 避免与盈亏色混用)
++        const V = window.PfView;
++        const esc = V ? V.esc : (v => String(v == null ? '' : v));
++        const fmt = (v, d = 2) => (typeof v === 'number' && isFinite(v)) ? v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '--';
+         const SIDE = { buy: '买入', sell: '卖出' };
+-        container.innerHTML = trades.map(t => {
++        const rows = trades.map(t => {
+             const side = SIDE[t.side] || esc(t.side || t.kind || '--');
+-            const cls = t.side === 'buy' ? 'pf-hist-buy' : t.side === 'sell' ? 'pf-hist-sell' : 'pf-hist-import';
+-            return `<div class="pf-history-item ${cls}">
+-                <div class="pf-hist-body">
+-                    <div class="pf-hist-title"><strong>${side}</strong> ${esc(t.name || t.ts_code)} <span class="pf-hist-code">${esc(t.ts_code || t.code)}</span></div>
+-                    <div class="pf-hist-detail">${t.qty != null ? esc(t.qty) : '--'} × ¥${fmt(t.price, 3)} = ¥${fmt(t.amount)}${t.fees != null ? ` · 费用 ¥${fmt(t.fees)}` : ''}</div>
+-                </div>
+-                <div class="pf-hist-meta"><span class="pf-hist-time">${esc(t.date)} ${esc(t.time || '')}</span></div>
+-            </div>`;
++            const code = t.ts_code || t.code;
++            return `<tr>
++                <td class="pf-mono">${esc(t.date)}${t.time ? ` <span class="pf-dim">${esc(t.time)}</span>` : ''}</td>
++                <td><span class="ac-tag pf-side-tag">${side}</span></td>
++                <td><span class="pf-name-cell">${esc(t.name || code)}</span> <span class="pf-code-ext">${esc(code)}</span></td>
++                <td class="num pf-mono">${typeof t.qty === 'number' ? t.qty.toLocaleString('en-US') : esc(t.qty == null ? '--' : t.qty)}</td>
++                <td class="num pf-mono">${V ? V.priceText(t.price, code) : fmt(t.price, 3)}</td>
++                <td class="num pf-mono">${fmt(t.amount)}</td>
++                <td class="num pf-mono pf-dim">${t.fees != null ? fmt(t.fees) : '--'}</td>
++            </tr>`;
+         }).join('');
++        container.innerHTML = `<div class="pf-table-wrap"><table class="pf-table pf-trades-table"><thead><tr><th>日期</th><th>方向</th><th>名称 / 代码</th>
++            <th class="num">数量</th><th class="num">价格</th><th class="num">金额</th><th class="num">费用</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+     }
+ 
+     // ════════════════════════════════════
+@@ -1073,6 +1083,18 @@ document.addEventListener('DOMContentLoaded', function () {
+         });
+     });
+ 
++    // 2026-11-04 视觉轮 V3: 手机端 (≤ 768px) 穿透区默认折叠, 桌面保持展开; 合规判定行在折叠区外始终可见
++    (function collapseLookthroughOnPhone() {
++        const body = document.getElementById('lookthrough-body');
++        if (!body || !window.matchMedia || !window.matchMedia('(max-width: 768px)').matches) return;
++        body.classList.remove('pf-expanded');
++        const header = document.querySelector('[data-toggle="lookthrough-body"]');
++        const arrow = header && header.querySelector('.pf-collapse-arrow');
++        if (arrow) arrow.classList.remove('pf-arrow-open');
++        const panel = body.closest('.glass-panel');
++        if (panel) panel.classList.add('pf-panel-collapsed');
++    })();
++
+     // 交易记录折叠/展开 (保留旧逻辑, 使用 display:none 而非 max-height)
+     const historyToggle = document.getElementById('history-toggle');
+     const historyList = document.getElementById('trade-history-list');
+diff --git a/quant_dashboard/static/js/portfolio_view.js b/quant_dashboard/static/js/portfolio_view.js
+index ffd98fa..0b3c341 100644
+--- a/quant_dashboard/static/js/portfolio_view.js
++++ b/quant_dashboard/static/js/portfolio_view.js
+@@ -114,6 +114,55 @@
+         };
+     }
+ 
++    // ── 手机 375 卡片列表 (2026-11-04 视觉轮 V3) ──
++    // 小仓位合并阈值: 展示用，非风险阈值 (只决定手机卡片是否收进"其余 N 只"; 桌面不合并)。
++    // 成本价兜底的持仓不参与合并 (warn 标签须始终可见); weight 缺失的持仓不参与合并。
++    const MOBILE_GROUP_BELOW_PCT = 2;
++
++    function splitForMobile(positions) {
++        const rows = sortByMarketValue(positions);
++        const main = [], small = [];
++        rows.forEach(p => {
++            const w = num(p.weight);
++            if (w !== null && w < MOBILE_GROUP_BELOW_PCT && p.price_source !== 'cost') small.push(p); else main.push(p);
++        });
++        // 只有 1 只时不合并 (合并不省空间)
++        return small.length >= 2 ? { main, small } : { main: rows, small: [] };
++    }
++
++    function positionCardHtml(p, maxW) {
++        const [code, ex = ''] = String(p.ts_code || '').split('.');
++        const type = instrumentType(p.ts_code);
++        const w = num(p.weight), pct = num(p.pnl_pct), pnl = num(p.pnl);
++        const width = barWidth(w, maxW);
++        return `<details class="pf-card" data-code="${esc(p.ts_code)}"><summary>
++            <span class="pf-card-name"><b>${esc(p.name)}</b> <span class="pf-code-ext">${esc(code)}.${esc(ex)}</span>${type ? ` <span class="pf-type-tag">${type}</span>` : ''}${p.price_source === 'cost' ? ` ${SRC.cost}` : ''}</span>
++            <span class="pf-card-mv num">${money(p.market_value)}<small>${w === null ? '--' : `${w.toFixed(1)}%`}</small>` +
++            `${width === null ? '' : `<span class="pf-weight-bar"><span class="pf-weight-fill" style="width:${width.toFixed(1)}%"></span></span>`}</span>
++            <span class="pf-card-pnl num ${pnlClass(p.pnl)}">${pct === null ? '--' : signed(pct, `${pct.toFixed(2)}%`)}</span>
++        </summary><dl class="pf-card-more">
++            <dt>行业</dt><dd>${esc(p.industry || '行业未知')}</dd>
++            <dt>数量</dt><dd class="num">${num(p.amount) === null ? '--' : p.amount.toLocaleString('en-US')}</dd>
++            <dt>成本价</dt><dd class="num">${priceText(p.cost, p.ts_code)}</dd>
++            <dt>现价</dt><dd class="num">${priceText(p.price, p.ts_code)}${sourceTag(p.price_source)}</dd>
++            <dt>浮动盈亏</dt><dd class="num ${pnlClass(p.pnl)}">${pnl === null ? '--' : signed(pnl, money(pnl))}</dd>
++        </dl></details>`;
++    }
++
++    /** 手机卡片列表: 名称 + 代码 + 类型 / 市值 + 占比 / 盈亏%; 点开看其余字段; 小仓位合并为"其余 N 只 · 合计 x%" (默认收起)。 */
++    function positionCardsHtml(positions) {
++        const all = sortByMarketValue(positions);
++        if (!all.length) return '<div class="pf-table-empty">当前无持仓</div>';
++        const maxW = maxWeight(all);
++        const { main, small } = splitForMobile(all);
++        const total = small.reduce((s, p) => s + (num(p.weight) || 0), 0);
++        return main.map(p => positionCardHtml(p, maxW)).join('') + (small.length
++            ? `<details class="pf-card-group"><summary>其余 ${small.length} 只 · 合计 ${total.toFixed(1)}%<small>（各不到 ${MOBILE_GROUP_BELOW_PCT}%，展示合并）</small></summary>` +
++              small.map(p => positionCardHtml(p, maxW)).join('') + '</details>'
++            : '');
++    }
++
+     root.PfView = { esc, instrumentType, isEtf, priceText, pnlClass, sortByMarketValue, maxWeight, barWidth,
+-                    positionRowHtml, positionsBodyHtml, kpiSources, money };
++                    positionRowHtml, positionsBodyHtml, positionCardsHtml, splitForMobile, kpiSources, money,
++                    MOBILE_GROUP_BELOW_PCT };
+ })(typeof window !== 'undefined' ? window : globalThis);
+diff --git a/quant_dashboard/tests/test_export_coverage_frontend.cjs b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+index 5b2f0f5..f73f676 100644
+--- a/quant_dashboard/tests/test_export_coverage_frontend.cjs
++++ b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+@@ -61,7 +61,7 @@ assert.equal(m.sub, '10-30 收盘 → 11-04 收盘');
+ // 4) 版本
+ assert.match(read('decision.html'), /trailing_stop_panel\.js\?v=15"/);
+ assert.match(read('decision.html'), /trailing_stop\.css\?v=12"/);
+-// 2026-11-04 组合页视觉轮 V2 改动 portfolio_kpis.js (收益涨跌色 / 回撤档位标签 / 执行目标行), 版本号 3 → 4
+-assert.match(read('portfolio.html'), /portfolio_kpis\.js\?v=4"/);
++// 2026-11-04 组合页视觉轮 V2 改动 portfolio_kpis.js (收益涨跌色 / 回撤档位标签 / 执行目标行), 版本号 3 → 4; V3 (风险贡献并排条) 4 → 5
++assert.match(read('portfolio.html'), /portfolio_kpis\.js\?v=5"/);
+ assert.match(read('static/css/trailing_stop.css'), /\.ts-check \{/);
+ console.log('test_export_coverage_frontend: OK');
+diff --git a/quant_dashboard/tests/test_import_valuation_time.cjs b/quant_dashboard/tests/test_import_valuation_time.cjs
+index 6810111..caf1e9a 100644
+--- a/quant_dashboard/tests/test_import_valuation_time.cjs
++++ b/quant_dashboard/tests/test_import_valuation_time.cjs
+@@ -32,6 +32,6 @@ assert.deepEqual(picks, ['15:00', '11:30', '09:00']);
+ for (const p of picks) assert(re.test(p), p);
+ assert.match(pm, /importValInput\.value = b\.dataset\.valtime;\s+syncImportConfirm\(\)/);
+ assert.match(pm, /forEach\(b => b\.classList\.remove\('active'\)\)/);   // 重新打开时清除选中
+-// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53
+-assert.match(html, /portfolio_manager\.js\?v=53"/);
++// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53, V3 (成交记录表格 / 手机卡片 / 穿透默认折叠) 53 → 54
++assert.match(html, /portfolio_manager\.js\?v=54"/);
+ console.log('import valuation time OK');
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+index fd3d697..bb602d5 100644
+--- a/quant_dashboard/tests/test_portfolio_visual.cjs
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -260,6 +260,87 @@ cctx.setTimeout = () => 0;
+ cctx.window = cctx;
+ vm.createContext(cctx);
+ vm.runInContext(read('static/js/portfolio_compliance.js'), cctx);
++// ═══ V3 下半页: 穿透、决定记录、成交记录、导入弹窗、手机端 ═══
++// 10) 穿透: 合规行为第一信息 (状态标签 + 主题读数), 在折叠区外; 行业未知不截断、始终最后一行
++const lctx = { console, Number, Math, Object, Array, Set, String, isFinite, Promise };
++lctx.globalThis = lctx;
++vm.createContext(lctx);
++vm.runInContext(read('static/js/lookthrough_panel.js'), lctx);
++const L = lctx.LookthroughPanel;
++const many = Array.from({ length: 12 }, (_, i) => ({ industry: `行业${i}`, pct_of_total: 20 - i }));
++const ir = L.industryRows([{ industry: '行业未知', pct_of_total: 0.12 }, ...many]);
++assert(ir.hasUnk && ir.unknown === 0.12 && ir.shown.length === 8 && ir.restCount === 4, '行业未知不参与截断');
++const ltHtml = L.renderLookthrough({ status: 'ok', unknown: { value: 0, pct_of_total: 0, items: [] }, etfs: [], companies: [],
++    industries: [{ industry: '行业未知', pct_of_total: 0.12 }, ...many] });
++const unkAt = ltHtml.indexOf('lt-unknown-row'), restAt = ltHtml.indexOf('lt-rest-row'), lastKnown = ltHtml.indexOf('>行业7<');
++assert(unkAt > restAt && restAt > lastKnown, '行业未知排在最后一行');
++assert(ltHtml.includes('<span class="ac-tag ac-tag-info">未知</span>'));
++assert(L.renderLookthrough({ status: 'ok', unknown: {}, etfs: [], companies: [], industries: [{ industry: '半导体', pct_of_total: 60 }] }).includes('lt-unknown-row'),
++    '无行业未知时也单列 (0%)');
++assert(!/ac-up|ac-down/.test(ltHtml) && !/style="[^"]*(color|background)/.test(ltHtml), '穿透中性条, 不加颜色');
++const comp2 = { checks: [{ rule_id: 'sector_concentration', passed: false, severity: 'hard_block',
++    metrics: { top_theme: '半导体电子', top_pct: 87.7, level: 'hard_block', limit_pct: 40, danger_pct: 60, unknown_industry: [{ name: '卫星ETF招商', pct: 0.12 }] } }] };
++const cl = L.complianceLineHtml(comp2, null);
++assert(cl.indexOf('<span class="ac-tag ac-tag-block">硬阻断</span>') < cl.indexOf('合规判定') && cl.includes('唯一判定'));
++assert(cl.includes('卫星ETF招商 0.12%'), '行业未知按 ETF 小字');
++assert(cl.includes('lt-warn-banner') && cl.includes('以合规为准'), '口径不一致用 warn');
++const ltZone = html.slice(html.indexOf('id="pf-lookthrough-zone"'), html.indexOf('id="pf-decision-zone"'));
++assert(ltZone.indexOf('id="lt-compliance"') < ltZone.indexOf('id="lookthrough-body"'), '合规行在折叠区外');
++// 风险贡献: 仓位占比 / 风险占比两列并排中性条, 无颜色阈值
++const rt = K.riskTableHtml({ portfolio: { positions: [{ name: 'A', ts_code: 'A', weight_pct: 25, risk_share: 0.24 }, { name: 'B', ts_code: 'B', weight_pct: 1.4, risk_share: 0.012 }] } });
++assert((rt.match(/class="lt-pair"/g) || []).length === 4 && rt.includes('仓位占比') && rt.includes('风险占比'));
++assert(!/ac-up|ac-down|ac-tag|status-/.test(rt));
++// 压力情景: 条件估计 · 非预测, 数字中性
++const stHtml = L.renderStress({ status: 'ok', nature: 'n', param_source: 'p', scenarios: [{ name: 's', shocks: {}, total_loss_pct_range: [-27.7, -27.7], by_theme: [] }] });
++assert(stHtml.includes('条件估计 · 非预测') && !/ac-up|ac-down/.test(stHtml));
++// 折叠区标题: chevron (无 ▶▼ 文字), 整行可点
++for (const m of html.matchAll(/<span class="pf-collapse-arrow[^"]*"[^>]*>([^<]*)<\/span>/g)) {
++    if (m[0].includes('aria-hidden')) assert.equal(m[1], '', 'chevron 用 CSS 绘制, 无字符');
++}
++assert(/\.pf-collapse-arrow::before/.test(vcss) && /\.pf-collapsible-header \{ cursor: pointer/.test(vcss));
++
++// 11) 决定记录: 采用 / 未采用 / 暂不行动中性标签; "不足以评价" info 标签
++const dec = D.renderDecisionRows([{ decision_id: 'a', decided_on: '2026-11-01', decision_status: 'adopted', intent: 'sell', codes: [], thesis: 't' },
++    { decision_id: 'b', decided_on: '2026-11-02', decision_status: 'deferred', intent: 'hold', codes: [], thesis: 't', status_eval: 'insufficient', reason: 'r' }], false);
++assert(dec.includes('<span class="ac-tag">采用</span>') && dec.includes('<span class="ac-tag">暂不行动</span>'));
++assert(dec.includes('<span class="ac-tag ac-tag-info">不足以评价</span>'));
++assert(D.renderPortfolioReview({ status: 'insufficient', reason: 'x' }, false).includes('ac-tag ac-tag-info'));
++assert(html.includes('<input type="checkbox" id="dr-show-amounts">'), '保留"显示金额"开关 (默认不勾选 = 隐藏)');
++assert(!html.includes('slip-refresh-btn" id="dr-start-btn') && /\.pf-input \{[\s\S]*?height: 30px/.test(vcss), '表单控件同一高度、统一按钮类');
++
++// 12) 成交记录: 按持仓表规范; 买入 / 卖出中性描边标签
++const hist = fnBody(pm, 'renderHistory');
++assert(hist.includes('ac-tag pf-side-tag') && !/ac-up|ac-down|pf-hist-buy|pf-hist-sell/.test(hist));
++assert(hist.includes('V.priceText(t.price, code)') && hist.includes('class="num'));
++
++// 13) 导入弹窗: 必填醒目、未填时确认按钮禁用可辨、快捷时点选中实底、对账单日期 .ac-asof
++assert(/class="pf-btn pf-btn-primary" id="import-confirm-btn"/.test(html) && /\.pf-btn:disabled[\s\S]*?dashed/.test(vcss));
++assert(/\.pf-valtime-pick\.active \{ background: var\(--dc-line-strong\)/.test(vcss));
++assert(html.includes('class="pf-import-valtime-date ac-asof" id="import-statement-date"'));
++assert(!visible.includes('pf-modal-badge'), '导入弹窗去掉 TXT → SYSTEM 徽章');
++
++// 14) 手机 375: KPI 两列; 持仓卡片列表 (不横向滚动); 小仓位只在手机合并, 成本兜底不参与; 穿透默认折叠
++const mob = css.slice(css.indexOf('@media (max-width: 768px)'), css.indexOf('VISIBLE-END'));
++assert(/\.pf-hero-cards \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/.test(mob), 'KPI 两列');
++assert(/\.pf-kpi-value \{[^}]*white-space: nowrap/.test(mob), 'KPI 数字不换行');
++assert(/#pf-positions-table \{ display: none; \}/.test(mob) && /\.pf-cards \{ display: flex/.test(mob), '手机改卡片列表');
++assert(css.indexOf('@media (max-width: 1200px)') < css.indexOf('@media (max-width: 768px)'), '手机规则在窄屏规则之后');
++assert.equal(V.MOBILE_GROUP_BELOW_PCT, 2);
++assert(/MOBILE_GROUP_BELOW_PCT = 2;/.test(read('static/js/portfolio_view.js')) && read('static/js/portfolio_view.js').includes('展示用，非风险阈值'));
++const MP = [{ ts_code: '588000.SH', name: 'a', market_value: 9, weight: 25, pnl_pct: -1, pnl: -1 },
++            { ts_code: '688825.SH', name: 'b', market_value: 3, weight: 1.4, pnl_pct: 6, pnl: 1 },
++            { ts_code: '159218.SZ', name: 'c', market_value: 2, weight: 1.0, pnl_pct: -5, pnl: -1 },
++            { ts_code: '300054.SZ', name: 'd', market_value: 1, weight: 1.3, pnl_pct: 0, pnl: 0, price_source: 'cost' }];
++const sp = V.splitForMobile(MP);
++assert.equal(sp.small.map(p => p.ts_code).join(','), '688825.SH,159218.SZ');
++assert(sp.main.some(p => p.ts_code === '300054.SZ'), '成本价兜底不参与合并');
++const cards = V.positionCardsHtml(MP);
++assert(cards.includes('其余 2 只 · 合计 2.4%') && /<details class="pf-card-group">/.test(cards) && !/<details class="pf-card-group" open/.test(cards), '合并默认收起');
++assert(cards.includes('pf-card-pnl num ac-down') && cards.includes('pf-card-pnl num ac-up') && cards.includes('pf-card-pnl num ac-flat'));
++assert(cards.includes('<span class="pf-type-tag">ETF</span>') && cards.includes('ac-tag-warn pf-src-cost'));
++assert(!V.positionsBodyHtml(MP).includes('其余'), '桌面不合并');
++assert(pm.includes("matchMedia('(max-width: 768px)')") && pm.includes("body.classList.remove('pf-expanded')"), '手机端穿透默认折叠');
++
+ (async () => {
+     // 渲染: 回撤 / 波动数字 className 只有 pf-kpi-value; 账户收益带涨跌类; 回撤档位为状态标签
+     kctx.fetch = async url => ({ ok: true, json: async () => ({ status: 'success',
+-- 
+2.43.0
+
