@@ -9,3 +9,9 @@
 [2026-11-03 22:33:11] quant_dashboard: Committing: refactor(portfolio): P2 当前仓位只读 account_exposure — 估值接口附带统一口径, 前端删自算/未追踪/阈值着色, 不可用显示 --
 [2026-11-03 22:33:11] quant_dashboard: PUSHED at e8b9d14
 [2026-11-03 22:33:11] --- Processing: NEWS ---
+[2026-11-03 22:33:11] NEWS: Committing: refactor(portfolio): P2 当前仓位只读 account_exposure — 估值接口附带统一口径, 前端删自算/未追踪/阈值着色, 不可用显示 --
+[2026-11-03 22:33:11] NEWS: PUSHED at 694db44
+[2026-11-03 22:33:11] quant_dashboard: PUSHED
+[2026-11-03 22:33:11] NEWS: PUSHED
+[2026-11-03 22:33:11] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 22:33:11] ===== AlphaCore Push v4.1 finished =====
