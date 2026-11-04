@@ -9,3 +9,9 @@
 [2026-11-04 09:55:37] quant_dashboard: Committing: fix(valuation-time): 2a 持仓时点=对账单日期+估值时点, 不再用导入时间冒充; 未知按持仓过时; 导入校验 HH:MM, 台账补写时点; 收益起算日 10-30
 [2026-11-04 09:55:37] quant_dashboard: PUSHED at 884e297
 [2026-11-04 09:55:37] --- Processing: NEWS ---
+[2026-11-04 09:55:37] NEWS: Committing: fix(valuation-time): 2a 持仓时点=对账单日期+估值时点, 不再用导入时间冒充; 未知按持仓过时; 导入校验 HH:MM, 台账补写时点; 收益起算日 10-30
+[2026-11-04 09:55:37] NEWS: PUSHED at c488354
+[2026-11-04 09:55:37] quant_dashboard: PUSHED
+[2026-11-04 09:55:37] NEWS: PUSHED
+[2026-11-04 09:55:37] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-04 09:55:37] ===== AlphaCore Push v4.1 finished =====
