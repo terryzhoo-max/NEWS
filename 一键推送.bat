@@ -11,6 +11,7 @@ REM   on the staged snapshot). Emergency skip (logged, commit tagged):
 REM     set ALPHACORE_SKIP_TESTS=1
 REM     set "ALPHACORE_SKIP_REASON=<reason>"
 REM   The NEWS repo flow is unchanged.
+REM   Keep this file CRLF: cmd can mis-locate labels in LF-only batch files.
 REM ============================================================
 
 REM ---- Resolve script root ----
