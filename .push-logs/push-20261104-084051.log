@@ -1,0 +1,11 @@
+[2026-11-04 08:40:51] ===== AlphaCore Push v4.1 started =====
+[2026-11-04 08:40:51] Script root: D:\FIONA\google AI
+[2026-11-04 08:40:51] Git: git version 2.54.0.windows.1
+[2026-11-04 08:40:51] --- Processing: quant_dashboard ---
+[2026-11-04 08:40:51] quant_dashboard: pre-push check started
+[2026-11-04 08:41:07] pre-push: 用户选择全部加入 (17 个文件)
+[2026-11-04 08:42:50] pre-push: 快照测试 102s | AST: 通过 | pytest: 2067 passed, 1 skipped, 35 deselected, 35 warnings, 2 subtests passed in 84.24s (0:01:24) | production_check: 通过 | 前端: 27/27 通过
+[2026-11-04 08:40:51] quant_dashboard: pre-push check passed
+[2026-11-04 08:40:51] quant_dashboard: Committing: 任务/AI 服务开关: DeepSeek 余额不足暂停 AI 调用 (日报改用规则模板, NLP 情报暂停, AI 助手提示); 关键任务被暂停时审计警告
+[2026-11-04 08:40:51] quant_dashboard: PUSHED at 013a455
+[2026-11-04 08:40:51] --- Processing: NEWS ---

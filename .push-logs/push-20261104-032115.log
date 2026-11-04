@@ -9,3 +9,9 @@
 [2026-11-04 03:21:15] quant_dashboard: Committing: docs: C2/C3 部署核对记录, ETF 成分修复收尾
 [2026-11-04 03:21:15] quant_dashboard: PUSHED at 6a9582a
 [2026-11-04 03:21:15] --- Processing: NEWS ---
+[2026-11-04 03:21:15] NEWS: Committing: docs: C2/C3 部署核对记录, ETF 成分修复收尾
+[2026-11-04 03:21:15] NEWS: PUSHED at 78efd1f
+[2026-11-04 03:21:15] quant_dashboard: PUSHED
+[2026-11-04 03:21:15] NEWS: PUSHED
+[2026-11-04 03:21:15] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-04 03:21:15] ===== AlphaCore Push v4.1 finished =====
