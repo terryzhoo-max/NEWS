@@ -9,3 +9,9 @@
 [2026-11-04 09:42:57] quant_dashboard: Committing: feat(authority-ui): 1b 本机导入/清零/账户写入按钮禁用并标注请在服务器导入; secureFetch 业务 403 不再清除令牌
 [2026-11-04 09:42:57] quant_dashboard: PUSHED at c1606be
 [2026-11-04 09:42:57] --- Processing: NEWS ---
+[2026-11-04 09:42:57] NEWS: Committing: feat(authority-ui): 1b 本机导入/清零/账户写入按钮禁用并标注请在服务器导入; secureFetch 业务 403 不再清除令牌
+[2026-11-04 09:42:57] NEWS: PUSHED at 9b4474e
+[2026-11-04 09:42:57] quant_dashboard: PUSHED
+[2026-11-04 09:42:57] NEWS: PUSHED
+[2026-11-04 09:42:57] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-04 09:42:57] ===== AlphaCore Push v4.1 finished =====
