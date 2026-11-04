@@ -1,0 +1,11 @@
+[2026-11-03 23:04:27] ===== AlphaCore Push v4.1 started =====
+[2026-11-03 23:04:27] Script root: D:\FIONA\google AI
+[2026-11-03 23:04:27] Git: git version 2.54.0.windows.1
+[2026-11-03 23:04:27] --- Processing: quant_dashboard ---
+[2026-11-03 23:04:27] quant_dashboard: pre-push check started
+[2026-11-03 23:04:42] pre-push: 用户选择全部加入 (11 个文件)
+[2026-11-03 23:07:00] pre-push: 快照测试 138s | AST: 通过 | pytest: 2021 passed, 1 skipped, 35 deselected, 35 warnings, 2 subtests passed in 123.11s (0:02:03) | production_check: 通过 | 前端: 25/25 通过
+[2026-11-03 23:04:27] quant_dashboard: pre-push check passed
+[2026-11-03 23:04:27] quant_dashboard: Committing: feat(portfolio): P4 模块开关与按钮处理 — portfolio_modules.json 关闭 8 个模块(不发请求), 删调整仓位列与路径提示, 成交记录读成交台账, 穿透/决定记录上移; 记录服务器 ETF 成分缺失
+[2026-11-03 23:04:27] quant_dashboard: PUSHED at 4f39bb5
+[2026-11-03 23:04:27] --- Processing: NEWS ---

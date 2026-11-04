@@ -9,3 +9,9 @@
 [2026-11-03 22:51:57] quant_dashboard: Committing: feat(portfolio): P3 收益/回撤/波动/风险贡献只读唯一来源 — 账户 TWR 自 10-30 收盘(10-29 快照缺失), 波动读波动预算, 回撤读回撤刹车, MCTR 改 risk_share, 穿透区合规主题与行业拆分并列说明; 删 ROI/120D 指标
 [2026-11-03 22:51:57] quant_dashboard: PUSHED at 3cf3423
 [2026-11-03 22:51:57] --- Processing: NEWS ---
+[2026-11-03 22:51:57] NEWS: Committing: feat(portfolio): P3 收益/回撤/波动/风险贡献只读唯一来源 — 账户 TWR 自 10-30 收盘(10-29 快照缺失), 波动读波动预算, 回撤读回撤刹车, MCTR 改 risk_share, 穿透区合规主题与行业拆分并列说明; 删 ROI/120D 指标
+[2026-11-03 22:51:57] NEWS: PUSHED at 7400cba
+[2026-11-03 22:51:57] quant_dashboard: PUSHED
+[2026-11-03 22:51:57] NEWS: PUSHED
+[2026-11-03 22:51:57] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 22:51:57] ===== AlphaCore Push v4.1 finished =====
