@@ -9,3 +9,9 @@
 [2026-11-03 22:22:58] quant_dashboard: Committing: feat(portfolio): P1 合规徽章与告警条只读合规引擎 — 删除 PfAlerts 12 条前端阈值; 加载中/不可用不显示通过, 点击跳转决策中枢合规区; 价格源降级改为数据质量提示
 [2026-11-03 22:22:58] quant_dashboard: PUSHED at 2d525fc
 [2026-11-03 22:22:58] --- Processing: NEWS ---
+[2026-11-03 22:22:58] NEWS: Committing: feat(portfolio): P1 合规徽章与告警条只读合规引擎 — 删除 PfAlerts 12 条前端阈值; 加载中/不可用不显示通过, 点击跳转决策中枢合规区; 价格源降级改为数据质量提示
+[2026-11-03 22:22:58] NEWS: PUSHED at 8b9c1c2
+[2026-11-03 22:22:58] quant_dashboard: PUSHED
+[2026-11-03 22:22:58] NEWS: PUSHED
+[2026-11-03 22:22:58] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 22:22:58] ===== AlphaCore Push v4.1 finished =====
