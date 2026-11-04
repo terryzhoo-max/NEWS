@@ -9,3 +9,9 @@
 [2026-11-03 23:04:27] quant_dashboard: Committing: feat(portfolio): P4 模块开关与按钮处理 — portfolio_modules.json 关闭 8 个模块(不发请求), 删调整仓位列与路径提示, 成交记录读成交台账, 穿透/决定记录上移; 记录服务器 ETF 成分缺失
 [2026-11-03 23:04:27] quant_dashboard: PUSHED at 4f39bb5
 [2026-11-03 23:04:27] --- Processing: NEWS ---
+[2026-11-03 23:04:27] NEWS: Committing: feat(portfolio): P4 模块开关与按钮处理 — portfolio_modules.json 关闭 8 个模块(不发请求), 删调整仓位列与路径提示, 成交记录读成交台账, 穿透/决定记录上移; 记录服务器 ETF 成分缺失
+[2026-11-03 23:04:27] NEWS: PUSHED at 7b8f075
+[2026-11-03 23:04:27] quant_dashboard: PUSHED
+[2026-11-03 23:04:27] NEWS: PUSHED
+[2026-11-03 23:04:27] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-03 23:04:27] ===== AlphaCore Push v4.1 finished =====
