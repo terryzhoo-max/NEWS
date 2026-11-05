@@ -1,0 +1,10 @@
+[2026-11-05 10:34:17] ===== AlphaCore Push v4.1 started =====
+[2026-11-05 10:34:17] Script root: D:\FIONA\google AI
+[2026-11-05 10:34:17] Git: git version 2.54.0.windows.1
+[2026-11-05 10:34:17] --- Processing: quant_dashboard ---
+[2026-11-05 10:34:17] quant_dashboard: pre-push check started
+[2026-11-05 10:36:44] pre-push: 快照测试 143s | AST: 通过 | pytest: 2274 passed, 1 skipped, 35 deselected, 102 warnings, 2 subtests passed in 125.69s (0:02:05) | production_check: 通过 | 前端: 36/36 通过
+[2026-11-05 10:34:17] quant_dashboard: pre-push check passed
+[2026-11-05 10:34:17] quant_dashboard: Committing: 第0轮0a-4：服务器写操作日志——纯ASGI中间件注册在ApiKeyMiddleware外层(401/403也记,auth=ok/missing/invalid/not_required/unconfigured由认证中间件写标记)；只记/api/写方法；不读令牌与请求体,query敏感键连键名不记；导入3接口与/ci/run、/ci/accept附加文件名/字节/行数/结果/错误码摘要；data_lake/audit/write_log-YYYY-MM.jsonl按北京月轮换,20MB截断标记,写失败不影响请求；conftest重定向日志目录
+[2026-11-05 10:34:17] quant_dashboard: PUSHED at acb9a33
+[2026-11-05 10:34:17] --- Processing: NEWS ---
