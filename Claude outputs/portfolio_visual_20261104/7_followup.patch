@@ -1,0 +1,331 @@
+From cde8bbd0d65c75765908e373108b37563a9a611e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 18:16:42 -0600
+Subject: [PATCH] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=EF=BC=9A=E5=85=AC?=
+ =?UTF-8?q?=E5=8F=B8=E6=9A=B4=E9=9C=B2=E8=A1=8C=E4=B8=9A=E5=90=8D=E4=B8=8D?=
+ =?UTF-8?q?=E6=8A=98=E8=A1=8C=EF=BC=9B=E6=A8=A1=E5=9D=97=E5=BC=80=E5=85=B3?=
+ =?UTF-8?q?=E8=AF=BB=E4=B8=8D=E5=88=B0=E6=97=B6=E4=BF=9D=E6=8C=81=E9=9A=90?=
+ =?UTF-8?q?=E8=97=8F?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ .../docs/PLAN_B_IMPLEMENTATION_LOG.md         |  5 ++++
+ .../docs/PORTFOLIO_SLIMMING_PLAN.md           |  4 +--
+ quant_dashboard/portfolio.html                | 30 +++++++++----------
+ quant_dashboard/static/css/portfolio.css      |  2 +-
+ .../static/js/lookthrough_panel.js            |  2 +-
+ .../static/js/portfolio_manager.js            |  3 +-
+ .../static/js/portfolio_modules.js            | 23 ++++++++++----
+ .../tests/test_import_valuation_time.cjs      |  4 +--
+ .../tests/test_portfolio_modules.cjs          | 20 +++++++++++--
+ .../tests/test_portfolio_visual.cjs           |  2 +-
+ 10 files changed, 63 insertions(+), 32 deletions(-)
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index 2b0da04..212d7a8 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1638,3 +1638,8 @@ node tests\test_decision_review_panel.cjs
+ - 页面高度（`#dashboard-main`）：桌面 1440 3,451 → 3,097px；手机 375 6,253 → 2,069px（约 −67%），无横向滚动（375 / 375），KPI 5 个数字均未换行或截断；手机持仓"其余 4 只 · 合计 5.4%"默认收起，穿透默认折叠、合规行可见。
+ - 截图：`D:\FIONA\google AI\Claude outputs\portfolio_visual_20261104\screenshots\`（改前服务器 4 张、改后本机 6 张、改后服务器 5 张，README 写明环境与高度）。
+ - 观察（未改，登记）：桌面"前 10 大公司暴露"表的行业列较窄，"半导体"等会折成两行；本机未带令牌时模块开关接口读不到，8 个关闭模块按 P4 规则全部显示（旧样式）。
++
++### 复核两点的处理（2026-11-04 18:1x，用户授权按专业判断）
++- 公司暴露表行业列折行：行业单元格加 `lt-ind` 并 `white-space: nowrap`；云端渲染核对 10 行行业名均为单行。lookthrough_panel.js 5→6，portfolio.css 43→44。
++- 模块开关读不到时：由"全部视为开启"（P4）改为**保持隐藏**（fail-closed，只限本页 8 个可选模块）。理由：这 8 个模块因口径误导（历史模拟、Brinson、因子、行业饼图）、死入口（Trade、滑点）或破坏性（清零）而关闭，开关读不到（本机未带令牌、接口异常）时不应重新露出；读不到时持仓、穿透等主体内容不受影响。做法：11 个元素在 HTML 里默认带 `.pm-off`（脚本未运行也不露出），接口明确返回且 `enabled !== false` 才去掉；非 success 响应（如 401）按读取失败处理；`pmOn` 在开关脚本缺失时按关闭。后端 `services/portfolio_modules.py`"配置文件缺失 / 损坏 → 全部开启"未改（那是能读到的明确结果）；决策中枢开关规则未改。portfolio_modules.js 1→2，portfolio_manager.js 54→55。
++- 测试：`test_portfolio_modules.cjs` 失败分支改为断言"保持隐藏"（原断言"全部开启"，因规则变更而改），并新增 401 响应、默认 `.pm-off`、明确开启时去掉、`pmOn` 缺失按关闭；`test_import_valuation_time.cjs` 断言 v=55；`test_portfolio_visual.cjs` 隐藏区标记同步。前端 35 个 `.cjs` 全部通过；云端渲染核对开关正常与 401 两种情况下 8 个模块均不显示、穿透区正常。
+diff --git a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+index 240f008..b5d72c5 100644
+--- a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
++++ b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+@@ -266,8 +266,8 @@ B 核实（同一次读取）：`drawdown_brake` 与 `stop_breach_no_add` 均 pa
+ - 隐藏模块内联颜色未改（只列出）：`portfolio_manager.js` Brinson `pctColor`、因子 `pctColor` / `heatColor`（绿涨红跌），`.slip-side-buy / -sell`、`.slip-bps-*`；恢复模块前需按红涨绿跌与 `ac_tokens.css` 处理。
+ - `/portfolio/intraday-pnl` 11-05 凌晨读数合计 +134,009（+10.26%），与"日内"含义不符（疑似昨收对齐取到非上一交易日），待核实；本轮不处理。
+ - `styles.css` 全站旧变量（侧栏 emoji、DEEP 徽章内联色）属全站导航，本轮不动。
+-- 桌面"前 10 大公司暴露"表行业列偏窄，行业名会折成两行（部署后复核发现，纯排版）。
+-- 模块开关接口读不到（如本机未带令牌）时 8 个关闭模块全部显示（P4 规则"失败视为开启"）；是否改为失败时隐藏，待定。
++- ~~桌面"前 10 大公司暴露"表行业列折行~~：已修（行业名不折行）。
++- ~~模块开关读不到时 8 个关闭模块全部显示~~：已改为读不到时保持隐藏（fail-closed，只限本页可选模块；后端配置缺失规则与决策中枢不变），见实施日志。
+ 
+ ### 10.7 部署后复核（2026-11-04 18:05）
+ 
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index 1b2f83b..df4d040 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -10,7 +10,7 @@
+ 
+     <link rel="stylesheet" href="./static/css/styles.css?v=12">
+     <link rel="stylesheet" href="./static/css/visual_excellence.css?v=3">
+-    <link rel="stylesheet" href="./static/css/portfolio.css?v=43">
++    <link rel="stylesheet" href="./static/css/portfolio.css?v=44">
+     <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+     <script>window.echarts || document.write('<script src="./static/vendor/echarts.min.js"><\/script>')</script>
+@@ -68,8 +68,8 @@
+                 <span class="pf-authority-note" id="pf-authority-note" hidden></span>
+                 <input type="file" id="import-file-input" accept=".txt,.csv,.xls" style="display:none;">
+                 <button class="btn btn-sync" id="sync-btn">同步数据</button>
+-                <button class="btn btn-reset" id="reset-btn" data-ac-account-write>🗑️ 清零</button>
+-                <button class="btn btn-primary" id="open-trade-btn" data-ac-account-write style="box-shadow: 0 0 20px rgba(59,130,246,0.3);">➕ 新增仓位 / Trade</button>
++                <button class="btn btn-reset pm-off" id="reset-btn" data-ac-account-write>🗑️ 清零</button>
++                <button class="btn btn-primary pm-off" id="open-trade-btn" data-ac-account-write style="box-shadow: 0 0 20px rgba(59,130,246,0.3);">➕ 新增仓位 / Trade</button>
+             </div>
+         </header>
+ 
+@@ -86,7 +86,7 @@
+                         <div class="pf-exec-line"><span class="pf-exec-label" data-ac-authority-tag>执行目标</span> <b id="pf-exec-target">--</b> · 来自决策中枢 <a href="decision.html">查看</a></div>
+                     </div>
+                     <div class="pf-hero-right">
+-                        <div class="pf-sparkline-container" id="pf-sparkline" style="height: 60px; width: 200px;"></div>
++                        <div class="pf-sparkline-container pm-off" id="pf-sparkline" style="height: 60px; width: 200px;"></div>
+                     </div>
+                 </div>
+                 <!-- 2026-11-04 视觉轮 V2: 五个 KPI 同一组件 (标签 → 数字 → 来源与时间行), 顺序 市值 / 现金 / 账户收益 / 当前回撤 / 组合波动 -->
+@@ -213,8 +213,8 @@
+             </div>
+ 
+             <!-- ═══ 行业敞口饼图 (P4 开关 sector_pie 关闭; MCTR 已移入穿透区「风险贡献」) ═══ -->
+-            <div class="pf-alert-strip" id="pf-alerts-risk"></div>
+-            <div class="pf-charts-row" id="pf-sector-zone">
++            <div class="pf-alert-strip pm-off" id="pf-alerts-risk"></div>
++            <div class="pf-charts-row pm-off" id="pf-sector-zone">
+                 <div class="glass-panel pf-chart-box">
+                     <h4>🛡️ 行业风向敞口 <span class="pf-chart-sub">Sector Exposure</span></h4>
+                     <div id="sector-pie-chart" style="height: 340px;"></div>
+@@ -223,7 +223,7 @@
+ 
+             <!-- ═══ ZONE 4: Brinson 收益归因 (核心决策模块，常驻展开) ═══ -->
+ 
+-            <div class="glass-panel pf-brinson-panel" id="pf-brinson-zone">
++            <div class="glass-panel pf-brinson-panel pm-off" id="pf-brinson-zone">
+                 <div class="pf-panel-header">
+                     <h3>🧬 收益归因分析 <span class="pf-panel-sub">Brinson-Fachler Attribution</span></h3>
+                     <div class="pf-table-controls" style="display:flex;gap:8px;align-items:center;">
+@@ -315,7 +315,7 @@
+             </div>
+ 
+             <!-- ═══ ZONE 5: 模拟净值走势 (可折叠) ═══ -->
+-            <div class="glass-panel pf-chart-box pf-panel-collapsed" style="flex:1;min-height:auto;" id="pf-nav-zone">
++            <div class="glass-panel pf-chart-box pf-panel-collapsed pm-off" style="flex:1;min-height:auto;" id="pf-nav-zone">
+                 <div class="pf-panel-header pf-collapsible-header" data-toggle="nav-body">
+                     <h3>📈 当前持仓历史模拟 <span class="pf-panel-sub">假设一直持有今天的持仓 · 非真实历史业绩 · vs 沪深300</span></h3>
+                     <div style="display:flex;align-items:center;gap:10px;">
+@@ -329,7 +329,7 @@
+             </div>
+ 
+             <!-- ═══ ZONE 6: 三因子风险归因 (可折叠) ═══ -->
+-            <div class="glass-panel pf-brinson-panel pf-panel-collapsed" id="pf-factor-zone">
++            <div class="glass-panel pf-brinson-panel pf-panel-collapsed pm-off" id="pf-factor-zone">
+                 <div class="pf-panel-header pf-collapsible-header" data-toggle="factor-body">
+                     <h3>🔬 三因子风险归因 <span class="pf-panel-sub">Market-SMB-HML Risk Attribution</span></h3>
+                     <div class="pf-table-controls" style="display:flex;gap:8px;align-items:center;">
+@@ -406,7 +406,7 @@
+             </div>
+ 
+             <!-- ═══ ZONE 7: 执行质量分析 (可折叠) ═══ -->
+-            <div class="glass-panel pf-slippage-panel pf-panel-collapsed" id="pf-slippage-zone">
++            <div class="glass-panel pf-slippage-panel pf-panel-collapsed pm-off" id="pf-slippage-zone">
+                 <div class="pf-panel-header pf-collapsible-header" data-toggle="slippage-body">
+                     <h3>⚡ 执行质量分析 <span class="pf-panel-sub">OMS Slippage Attribution</span></h3>
+                     <div class="pf-table-controls">
+@@ -524,7 +524,7 @@
+     <div class="pf-toast-container" id="toast-container"></div>
+ 
+     <!-- ═══ 交易弹窗 ═══ -->
+-    <div class="pf-modal-overlay" id="trade-modal">
++    <div class="pf-modal-overlay pm-off" id="trade-modal">
+         <div class="pf-modal">
+             <div class="pf-modal-header">
+                 <h3 class="pf-modal-title">执行交易指令</h3>
+@@ -622,7 +622,7 @@
+     </div>
+ 
+     <!-- ═══ 清零确认弹窗 ═══ -->
+-    <div class="pf-modal-overlay" id="reset-modal">
++    <div class="pf-modal-overlay pm-off" id="reset-modal">
+         <div class="pf-modal" style="width: 440px;">
+             <div class="pf-modal-header">
+                 <h3 class="pf-modal-title">🗑️ 清零投资组合</h3>
+@@ -641,12 +641,12 @@
+         </div>
+     </div>
+ 
+-    <script src="./static/js/portfolio_modules.js?v=1"></script>
++    <script src="./static/js/portfolio_modules.js?v=2"></script>
+     <script src="./static/js/portfolio_compliance.js?v=3"></script>
+     <script src="./static/js/portfolio_kpis.js?v=5"></script>
+     <script src="./static/js/portfolio_view.js?v=3"></script>
+-    <script src="./static/js/portfolio_manager.js?v=54"></script>
+-    <script src="./static/js/lookthrough_panel.js?v=5"></script>
++    <script src="./static/js/portfolio_manager.js?v=55"></script>
++    <script src="./static/js/lookthrough_panel.js?v=6"></script>
+     <script src="./static/js/decision_review_panel.js?v=4"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+ <script src="./static/js/authority_banner.js?v=1"></script><!-- 2026-11-04 非权威环境标注 (服务器不显示) -->
+diff --git a/quant_dashboard/static/css/portfolio.css b/quant_dashboard/static/css/portfolio.css
+index 1cde1db..7c4ed28 100644
+--- a/quant_dashboard/static/css/portfolio.css
++++ b/quant_dashboard/static/css/portfolio.css
+@@ -542,7 +542,7 @@ textarea.pf-input { height: auto; padding: 6px 8px; }
+ .lt-compliance { margin-top: 12px; }
+ .lt-compliance .ac-tag { margin-right: 4px; }
+ .lt-bars td { border-bottom: 0; padding-top: 3px; padding-bottom: 3px; }
+-.lt-bars .lt-name { white-space: nowrap; }
++.lt-bars .lt-name, .lt-bars .lt-ind { white-space: nowrap; }   /* 2026-11-04 复核: 行业名不折行 */
+ .lt-bar-td { width: 40%; }
+ .lt-bar { display: inline-block; width: 100%; max-width: 160px; height: 6px; vertical-align: middle; background: var(--dc-track); border-radius: 2px; overflow: hidden; }
+ .lt-bar i { display: block; height: 100%; background: var(--dc-data); }
+diff --git a/quant_dashboard/static/js/lookthrough_panel.js b/quant_dashboard/static/js/lookthrough_panel.js
+index 77cfb9c..2741732 100644
+--- a/quant_dashboard/static/js/lookthrough_panel.js
++++ b/quant_dashboard/static/js/lookthrough_panel.js
+@@ -82,7 +82,7 @@
+             const via = Array.from(new Set((c.sources || []).map((s) => s.via === 'direct' ? '直接持股' : s.via)));
+             const unk = !c.industry;
+             return `<tr${c.overlap ? ' class="lt-overlap"' : ''}><td class="lt-name">${esc(c.name)}<small> ${esc(c.code)}</small></td>
+-                <td class="${unk ? 'lt-unknown-cell' : ''}">${unk ? '行业未知' : esc(c.industry)}</td>
++                <td class="lt-ind${unk ? ' lt-unknown-cell' : ''}">${unk ? '行业未知' : esc(c.industry)}</td>
+                 <td class="lt-bar-td">${bar(c.pct_of_total, cmax, unk)}</td><td class="num">${pct(c.pct_of_total, 2)}</td>
+                 <td class="lt-sub">${via.map(esc).join(' · ')}${c.overlap ? ' <span class="ac-tag" title="同一公司来自多个来源">重叠</span>' : ''}</td></tr>`;
+         }).join('');
+diff --git a/quant_dashboard/static/js/portfolio_manager.js b/quant_dashboard/static/js/portfolio_manager.js
+index e77e043..68c901e 100644
+--- a/quant_dashboard/static/js/portfolio_manager.js
++++ b/quant_dashboard/static/js/portfolio_manager.js
+@@ -52,7 +52,8 @@ function stripEmoji(s) {
+ }
+ 
+ // 2026-11-03 组合页精简 P4: 模块开关 (static/js/portfolio_modules.js); 开关脚本缺失时全部按开启处理
+-function pmOn(key) { return !window.PfModules || window.PfModules.on(key); }
++// 2026-11-04: 开关脚本缺失时可选模块按关闭处理 (与 portfolio_modules.js 读不到开关时一致)
++function pmOn(key) { return !!window.PfModules && window.PfModules.on(key); }
+ function pmReady() { return (window.PfModules && window.PfModules.ready) || Promise.resolve(); }
+ 
+ document.addEventListener('DOMContentLoaded', function () {
+diff --git a/quant_dashboard/static/js/portfolio_modules.js b/quant_dashboard/static/js/portfolio_modules.js
+index 223e3e0..a7c7326 100644
+--- a/quant_dashboard/static/js/portfolio_modules.js
++++ b/quant_dashboard/static/js/portfolio_modules.js
+@@ -2,7 +2,11 @@
+  * 组合页模块开关 (2026-11-03 组合页精简 P4)
+  * 读取 /api/v1/portfolio/modules (唯一配置: config/portfolio_modules.json)。
+  * 关闭的模块: 元素加 .pm-off 隐藏, 各加载函数通过 PfModules.on(key) 跳过请求; 不删代码。
+- * 接口失败时全部视为开启 (与决策中枢开关同一规则; 清零与交易接口另有后端门控)。
++ * 2026-11-04 视觉轮复核后改为"读不到开关时保持隐藏" (fail-closed, 只限本页 8 个可选模块):
++ *   这 8 个模块是因为口径误导 / 死入口 / 破坏性操作才关闭的, 开关读不到 (如本机未带令牌、接口异常) 时
++ *   不应重新露出。页面上这些元素默认带 .pm-off, 只有接口明确返回 enabled !== false 才去掉。
++ *   未列在 SELECTORS 里的模块 (持仓表、穿透等) 不受影响, 始终开启。
++ *   后端配置文件缺失 / 损坏时仍按"全部开启"返回 (services/portfolio_modules.py 未改), 那是能读到的明确结果。
+  */
+ (function (root) {
+     'use strict';
+@@ -17,10 +21,11 @@
+         trade_entry: ['#open-trade-btn', '#trade-modal'],
+         reset_button: ['#reset-btn', '#reset-modal'],
+     };
+-    let modules = null;
++    let modules = null;      // null = 尚未读到或读取失败
++    let failed = false;
+ 
+     function on(key) {
+-        if (!modules) return true;
++        if (!modules) return !SELECTORS[key];            // 读到之前 / 读取失败: 可选模块一律视为关闭
+         const m = modules[key];
+         return !(m && m.enabled === false);
+     }
+@@ -39,8 +44,14 @@
+     function init(fetchFn) {
+         return fetchFn('/api/v1/portfolio/modules')
+             .then(r => r.json())
+-            .then(d => { modules = (d && d.status === 'success' && d.modules) || {}; })
+-            .catch(e => { if (root.console) root.console.warn('[PM] 模块开关读取失败, 全部按开启处理:', e); modules = {}; })
++            .then(d => {
++                if (d && d.status === 'success' && d.modules && typeof d.modules === 'object') { modules = d.modules; failed = false; }
++                else throw new Error((d && (d.detail || d.message || d.status)) || '响应无效');
++            })
++            .catch(e => {
++                failed = true; modules = null;
++                if (root.console) root.console.warn('[PM] 模块开关读取失败, 8 个可选模块保持隐藏:', e);
++            })
+             .then(() => {
+                 const doc = root.document;
+                 if (doc && doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', apply);
+@@ -49,5 +60,5 @@
+     }
+ 
+     const ready = root.fetch ? init(root.fetch.bind(root)) : Promise.resolve();
+-    root.PfModules = { ready, on, apply, init, SELECTORS };
++    root.PfModules = { ready, on, apply, init, SELECTORS, failed: () => failed };
+ })(typeof window !== 'undefined' ? window : globalThis);
+diff --git a/quant_dashboard/tests/test_import_valuation_time.cjs b/quant_dashboard/tests/test_import_valuation_time.cjs
+index 8071a2e..63dcc4f 100644
+--- a/quant_dashboard/tests/test_import_valuation_time.cjs
++++ b/quant_dashboard/tests/test_import_valuation_time.cjs
+@@ -32,6 +32,6 @@ assert.deepEqual(picks, ['15:00', '11:30', '09:00']);
+ for (const p of picks) assert(re.test(p), p);
+ assert.match(pm, /importValInput\.value = b\.dataset\.valtime;\s+syncImportConfirm\(\)/);
+ assert.match(pm, /forEach\(b => b\.classList\.remove\('active'\)\)/);   // 重新打开时清除选中
+-// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53, V3 (成交记录表格 / 手机卡片 / 穿透默认折叠) 53 → 54
+-assert.match(html, /portfolio_manager\.js\?v=54"/);
++// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53, V3 (成交记录表格 / 手机卡片 / 穿透默认折叠) 53 → 54, 复核 (开关脚本缺失按关闭) 54 → 55
++assert.match(html, /portfolio_manager\.js\?v=55"/);
+ console.log('import valuation time OK');
+diff --git a/quant_dashboard/tests/test_portfolio_modules.cjs b/quant_dashboard/tests/test_portfolio_modules.cjs
+index 23da233..3b3af51 100644
+--- a/quant_dashboard/tests/test_portfolio_modules.cjs
++++ b/quant_dashboard/tests/test_portfolio_modules.cjs
+@@ -30,7 +30,8 @@ for (const k of expectOff) {
+     for (const sel of SEL[k]) assert(html.includes(`id="${sel.slice(1)}"`), `页面无 ${sel}`);
+ }
+ 
+-// 3) 开关行为: 关闭 → on=false 并加 .pm-off; 接口失败 → 全部开启
++// 3) 开关行为: 关闭 → on=false 并加 .pm-off; 接口失败 → 8 个可选模块保持隐藏
++//    (2026-11-04 视觉轮复核后由"失败全部开启"改为 fail-closed: 这些模块因误导 / 死入口 / 破坏性而关闭, 读不到开关不应露出)
+ async function runWith(fetchImpl) {
+     const els = {};
+     const mk = sel => (els[sel] = els[sel] || { cls: new Set(), attrs: {}, classList: null });
+@@ -53,8 +54,21 @@ async function runWith(fetchImpl) {
+     assert(r.els['#pf-brinson-zone'].cls.has('pm-off'));
+     assert.equal(r.els['#reset-btn'].attrs['data-pm-off'], 'reset_button');
+     r = await runWith(async () => { throw new Error('net'); });
+-    for (const k of expectOff) assert.equal(r.P.on(k), true, `失败时 ${k} 应开启`);
+-    assert(!r.els['#pf-brinson-zone'].cls.has('pm-off'));
++    for (const k of expectOff) assert.equal(r.P.on(k), false, `失败时 ${k} 应保持隐藏`);
++    assert(r.els['#pf-brinson-zone'].cls.has('pm-off'));
++    assert.equal(r.P.on('lookthrough'), true, '未列出的模块不受影响');
++    assert.equal(r.P.failed(), true);
++    r = await runWith(async () => ({ json: async () => ({ detail: '需要访问令牌' }) }));   // 401 等非 success 响应
++    for (const k of expectOff) assert.equal(r.P.on(k), false, `无效响应时 ${k} 应保持隐藏`);
++    // 页面默认: 11 个元素静态带 .pm-off (脚本未运行也不露出); 接口明确开启才去掉
++    for (const k of expectOff) for (const sel of SEL[k]) {
++        const tag = html.match(new RegExp(`<[a-z]+ [^>]*id="${sel.slice(1)}"[^>]*>`))[0];
++        assert(/class="[^"]*\bpm-off\b/.test(tag), `${sel} 须默认 .pm-off`);
++    }
++    r = await runWith(async () => ({ json: async () => ({ status: 'success', modules: { brinson: { enabled: true } } }) }));
++    assert.equal(r.P.on('brinson'), true);
++    assert(!r.els['#pf-brinson-zone'].cls.has('pm-off'), '明确开启时去掉 .pm-off');
++    assert(/function pmOn\(key\) \{ return !!window\.PfModules && window\.PfModules\.on\(key\); \}/.test(mgr), '开关脚本缺失时按关闭');
+ 
+     // 4) 隐藏模块不发请求: 加载入口都经开关
+     assert(/pmOn\('sector_pie'\)\) loadRisk\(\)/.test(mgr));
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+index a571ae6..e49e574 100644
+--- a/quant_dashboard/tests/test_portfolio_visual.cjs
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -28,7 +28,7 @@ function cutLine(src, needle) {
+     return src.slice(0, a) + src.slice(b);
+ }
+ let visible = html.slice(html.indexOf('<main'), html.indexOf('<script src="./static/js/portfolio_modules.js'));
+-visible = cut(visible, '<div class="pf-alert-strip" id="pf-alerts-risk">', '<!-- ═══ 成交记录');   // 行业饼图 / Brinson / 历史模拟 / 三因子 / 滑点
++visible = cut(visible, '<div class="pf-alert-strip pm-off" id="pf-alerts-risk">', '<!-- ═══ 成交记录');   // 行业饼图 / Brinson / 历史模拟 / 三因子 / 滑点
+ visible = cut(visible, '<!-- ═══ 交易弹窗 ═══ -->', '<!-- ═══ 导入持仓弹窗 ═══ -->');
+ assert(visible.includes('<!-- ═══ 清零确认弹窗 ═══ -->'));
+ visible = visible.slice(0, visible.indexOf('<!-- ═══ 清零确认弹窗 ═══ -->'));          // 清零弹窗 (reset_button 关闭) 位于最后
+-- 
+2.43.0
+
