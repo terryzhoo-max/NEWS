@@ -8,3 +8,9 @@
 [2026-11-05 11:37:00] quant_dashboard: Committing: 第0轮0a-6：审计页A区新增'策略CI'读数（只读不计分：MR各状态/ERP最近运行、待批准/已过期/已被取代计数、近35天direct、写操作日志大小与最后一行；读取出错只降级本行）；均值回归行来源按lifecycle_source显示；新测试test_round0_audit_ci 26条
 [2026-11-05 11:37:00] quant_dashboard: PUSHED at e3e0ce0
 [2026-11-05 11:37:00] --- Processing: NEWS ---
+[2026-11-05 11:37:00] NEWS: Committing: 第0轮0a-6：审计页A区新增'策略CI'读数（只读不计分：MR各状态/ERP最近运行、待批准/已过期/已被取代计数、近35天direct、写操作日志大小与最后一行；读取出错只降级本行）；均值回归行来源按lifecycle_source显示；新测试test_round0_audit_ci 26条
+[2026-11-05 11:37:00] NEWS: PUSHED at e19b76c
+[2026-11-05 11:37:00] quant_dashboard: PUSHED
+[2026-11-05 11:37:00] NEWS: PUSHED
+[2026-11-05 11:37:00] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-05 11:37:00] ===== AlphaCore Push v4.1 finished =====
