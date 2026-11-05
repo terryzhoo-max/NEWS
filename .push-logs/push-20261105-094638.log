@@ -8,3 +8,9 @@
 [2026-11-05 09:46:37] quant_dashboard: Committing: 文档：第0轮会话一组末（交割单导入记录、回撤一致性核对、0a-1+0a-2部署与复核、ci_runs新列已核实）
 [2026-11-05 09:46:37] quant_dashboard: PUSHED at 18c97db
 [2026-11-05 09:46:37] --- Processing: NEWS ---
+[2026-11-05 09:46:37] NEWS: Committing: 文档：第0轮会话一组末（交割单导入记录、回撤一致性核对、0a-1+0a-2部署与复核、ci_runs新列已核实）
+[2026-11-05 09:46:37] NEWS: PUSHED at a09073b
+[2026-11-05 09:46:37] quant_dashboard: PUSHED
+[2026-11-05 09:46:37] NEWS: PUSHED
+[2026-11-05 09:46:37] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-05 09:46:37] ===== AlphaCore Push v4.1 finished =====
