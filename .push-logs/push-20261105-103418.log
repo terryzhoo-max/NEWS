@@ -8,3 +8,9 @@
 [2026-11-05 10:34:17] quant_dashboard: Committing: 第0轮0a-4：服务器写操作日志——纯ASGI中间件注册在ApiKeyMiddleware外层(401/403也记,auth=ok/missing/invalid/not_required/unconfigured由认证中间件写标记)；只记/api/写方法；不读令牌与请求体,query敏感键连键名不记；导入3接口与/ci/run、/ci/accept附加文件名/字节/行数/结果/错误码摘要；data_lake/audit/write_log-YYYY-MM.jsonl按北京月轮换,20MB截断标记,写失败不影响请求；conftest重定向日志目录
 [2026-11-05 10:34:17] quant_dashboard: PUSHED at acb9a33
 [2026-11-05 10:34:17] --- Processing: NEWS ---
+[2026-11-05 10:34:17] NEWS: Committing: 第0轮0a-4：服务器写操作日志——纯ASGI中间件注册在ApiKeyMiddleware外层(401/403也记,auth=ok/missing/invalid/not_required/unconfigured由认证中间件写标记)；只记/api/写方法；不读令牌与请求体,query敏感键连键名不记；导入3接口与/ci/run、/ci/accept附加文件名/字节/行数/结果/错误码摘要；data_lake/audit/write_log-YYYY-MM.jsonl按北京月轮换,20MB截断标记,写失败不影响请求；conftest重定向日志目录
+[2026-11-05 10:34:17] NEWS: PUSHED at c09f8b6
+[2026-11-05 10:34:17] quant_dashboard: PUSHED
+[2026-11-05 10:34:17] NEWS: PUSHED
+[2026-11-05 10:34:17] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-05 10:34:17] ===== AlphaCore Push v4.1 finished =====
