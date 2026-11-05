@@ -8,3 +8,9 @@
 [2026-11-05 12:17:45] quant_dashboard: Committing: 文档：第0轮0c组末（11-06 02:12北京部署40f29c9，部署后5项与A区不变，月度CI恢复未逾期；第0轮完成；12-01运行后只读核对办法）
 [2026-11-05 12:17:45] quant_dashboard: PUSHED at bfa0673
 [2026-11-05 12:17:45] --- Processing: NEWS ---
+[2026-11-05 12:17:45] NEWS: Committing: 文档：第0轮0c组末（11-06 02:12北京部署40f29c9，部署后5项与A区不变，月度CI恢复未逾期；第0轮完成；12-01运行后只读核对办法）
+[2026-11-05 12:17:45] NEWS: PUSHED at 28e5ea8
+[2026-11-05 12:17:45] quant_dashboard: PUSHED
+[2026-11-05 12:17:45] NEWS: PUSHED
+[2026-11-05 12:17:45] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-05 12:17:45] ===== AlphaCore Push v4.1 finished =====

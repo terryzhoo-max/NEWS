@@ -1,0 +1,11 @@
+[2026-11-05 17:55:28] ===== AlphaCore Push v4.1 started =====
+[2026-11-05 17:55:28] Script root: D:\FIONA\google AI
+[2026-11-05 17:55:28] Git: git version 2.54.0.windows.1
+[2026-11-05 17:55:28] --- Processing: quant_dashboard ---
+[2026-11-05 17:55:28] quant_dashboard: pre-push check started
+[2026-11-05 17:55:36] pre-push: 用户选择全部加入 (3 个文件)
+[2026-11-05 17:57:40] pre-push: 快照测试 124s | AST: 通过 | pytest: 2325 passed, 1 skipped, 35 deselected, 102 warnings, 2 subtests passed in 105.63s (0:01:45) | production_check: 通过 | 前端: 36/36 通过
+[2026-11-05 17:55:28] quant_dashboard: pre-push check passed
+[2026-11-05 17:55:28] quant_dashboard: Committing: docs: 第 1 轮方案确认（首页并入宏观背景）+ 实施日志 + 分轮计划
+[2026-11-05 17:55:28] quant_dashboard: PUSHED at 8b9ba44
+[2026-11-05 17:55:28] --- Processing: NEWS ---
