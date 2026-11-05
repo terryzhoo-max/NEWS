@@ -1,0 +1,326 @@
+From 64c9a6bf440784fa0db3583884dcaefe02842480 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 18:36:57 -0600
+Subject: [PATCH] =?UTF-8?q?=E7=BB=84=E5=90=88=E9=A1=B5=EF=BC=9A=E6=8C=81?=
+ =?UTF-8?q?=E4=BB=93=E8=A1=A8=E5=8A=A0=E5=8F=AA=E8=AF=BB=E8=B7=9F=E8=B8=AA?=
+ =?UTF-8?q?=E6=AD=A2=E7=9B=88=E7=8A=B6=E6=80=81=E5=88=97=EF=BC=9B=E8=AE=B0?=
+ =?UTF-8?q?=E5=BD=95=E8=A7=86=E8=A7=89=E8=BD=AE=E6=8F=90=E4=BA=A4=E8=AF=B4?=
+ =?UTF-8?q?=E6=98=8E=E5=AF=B9=E7=85=A7?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVecjCoT6vK5sZCkeme
+---
+ .../docs/PLAN_B_IMPLEMENTATION_LOG.md         | 13 ++++
+ .../docs/PORTFOLIO_SLIMMING_PLAN.md           |  4 +-
+ quant_dashboard/portfolio.html                | 11 ++--
+ quant_dashboard/static/css/portfolio.css      |  4 ++
+ .../static/js/portfolio_manager.js            | 18 +++++-
+ quant_dashboard/static/js/portfolio_view.js   | 61 +++++++++++++++----
+ .../tests/test_import_valuation_time.cjs      |  4 +-
+ .../tests/test_portfolio_visual.cjs           | 17 ++++++
+ 8 files changed, 108 insertions(+), 24 deletions(-)
+
+diff --git a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+index 212d7a8..0d51c6a 100644
+--- a/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
++++ b/quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md
+@@ -1643,3 +1643,16 @@ node tests\test_decision_review_panel.cjs
+ - 公司暴露表行业列折行：行业单元格加 `lt-ind` 并 `white-space: nowrap`；云端渲染核对 10 行行业名均为单行。lookthrough_panel.js 5→6，portfolio.css 43→44。
+ - 模块开关读不到时：由"全部视为开启"（P4）改为**保持隐藏**（fail-closed，只限本页 8 个可选模块）。理由：这 8 个模块因口径误导（历史模拟、Brinson、因子、行业饼图）、死入口（Trade、滑点）或破坏性（清零）而关闭，开关读不到（本机未带令牌、接口异常）时不应重新露出；读不到时持仓、穿透等主体内容不受影响。做法：11 个元素在 HTML 里默认带 `.pm-off`（脚本未运行也不露出），接口明确返回且 `enabled !== false` 才去掉；非 success 响应（如 401）按读取失败处理；`pmOn` 在开关脚本缺失时按关闭。后端 `services/portfolio_modules.py`"配置文件缺失 / 损坏 → 全部开启"未改（那是能读到的明确结果）；决策中枢开关规则未改。portfolio_modules.js 1→2，portfolio_manager.js 54→55。
+ - 测试：`test_portfolio_modules.cjs` 失败分支改为断言"保持隐藏"（原断言"全部开启"，因规则变更而改），并新增 401 响应、默认 `.pm-off`、明确开启时去掉、`pmOn` 缺失按关闭；`test_import_valuation_time.cjs` 断言 v=55；`test_portfolio_visual.cjs` 隐藏区标记同步。前端 35 个 `.cjs` 全部通过；云端渲染核对开关正常与 401 两种情况下 8 个模块均不显示、穿透区正常。
++
++### 两项待办的处理与提交说明更正（2026-11-04 18:3x，用户授权按专业判断）
++- **持仓表跟踪止盈状态列：做。** 理由：哪只持仓止损已触发是"账户现在是什么样"的事实，本页原先看不到；只读、读决策中枢同一接口 `/api/v1/portfolio/trailing-stops`（`positions[].status`），前端不判定，不写操作（不出现"卖出 / 次日开盘"等），点击跳 `decision.html#trailing-stop-panel`（唯一止损执行入口）。显示：RED"止损已触发"（阻断实底，真实禁止状态）、LEGACY"遗留越线"（legacy 描边）、YELLOW"临近止损线"（warn）、ACTION"到达止盈档"（info）、GREEN"正常"（灰字）、NO_DATA"无行情"；读取失败 "--"。手机卡片：非正常状态在摘要行可见，且不参与小仓位合并。portfolio_view.js 3→4、portfolio_manager.js 55→56、portfolio.css 44→45；`test_import_valuation_time.cjs` 断言 v=56；`test_portfolio_visual.cjs` 新增第 15 组断言。
++- **隐藏模块内的绿涨红跌：本轮不改。** 理由：8 个模块对用户不可见，改了无可见收益；按 `config/portfolio_modules.json` 的 restore_if，恢复前本就要重写（真实区间权重、按成交台账等），届时一并按红涨绿跌与 `ac_tokens.css` 处理，避免改两次。保留在方案 10.6 待办。
++- **提交说明更正（历史不改写）：** 视觉轮 7 次提交均以默认说明"update: daily update"提交——原因是我给的推送命令把说明写成了 PowerShell 注释，而 `一键推送.bat` 读的是环境变量 `ALPHACORE_COMMIT_MSG`，未设置时用默认值。已推送的 main 不强推改写（会影响服务器拉取与 CI），以此处对照为准：
++  - `bb4609c` V1：ac_tokens 接入、去装饰、去 emoji、红涨绿跌、英文清理
++  - `9f59718` A：valuation 价格保留 3 位小数（ETF 报价到 0.001）
++  - `aa8a43c` V2：顶栏、核心资产区、持仓表
++  - `5eee018` V3：穿透、决定记录、成交记录、导入弹窗、手机端
++  - `401ef09` V3b：可见文字显示中文（价格来源标签、映射表说明）
++  - `22cb388` 部署后复核记录（基线一致、实测高度、截图位置）
++  - `d61f98f` 公司暴露行业名不折行；模块开关读不到时保持隐藏
++  之后的推送命令改为先设 `$env:ALPHACORE_COMMIT_MSG`。
+diff --git a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+index b5d72c5..5366d1a 100644
+--- a/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
++++ b/quant_dashboard/docs/PORTFOLIO_SLIMMING_PLAN.md
+@@ -262,8 +262,8 @@ B 核实（同一次读取）：`drawdown_brake` 与 `stop_breach_no_add` 均 pa
+ 
+ ### 10.6 视觉轮登记的待办
+ 
+-- 持仓表只读跟踪止盈状态列（RED / YELLOW / GREEN / LEGACY 文字标签，点击跳决策中枢）：新增读取，本轮不加（10.2 第 4 节 4）。
+-- 隐藏模块内联颜色未改（只列出）：`portfolio_manager.js` Brinson `pctColor`、因子 `pctColor` / `heatColor`（绿涨红跌），`.slip-side-buy / -sell`、`.slip-bps-*`；恢复模块前需按红涨绿跌与 `ac_tokens.css` 处理。
++- ~~持仓表只读跟踪止盈状态列~~：18:3x 用户授权后已加（只读决策中枢同一接口，只写状态不写操作，见实施日志）。
++- 隐藏模块内联颜色未改（只列出；18:3x 决定：恢复模块时随重写一并处理，不单独改）：`portfolio_manager.js` Brinson `pctColor`、因子 `pctColor` / `heatColor`（绿涨红跌），`.slip-side-buy / -sell`、`.slip-bps-*`；恢复模块前需按红涨绿跌与 `ac_tokens.css` 处理。
+ - `/portfolio/intraday-pnl` 11-05 凌晨读数合计 +134,009（+10.26%），与"日内"含义不符（疑似昨收对齐取到非上一交易日），待核实；本轮不处理。
+ - `styles.css` 全站旧变量（侧栏 emoji、DEEP 徽章内联色）属全站导航，本轮不动。
+ - ~~桌面"前 10 大公司暴露"表行业列折行~~：已修（行业名不折行）。
+diff --git a/quant_dashboard/portfolio.html b/quant_dashboard/portfolio.html
+index df4d040..fe8cfe2 100644
+--- a/quant_dashboard/portfolio.html
++++ b/quant_dashboard/portfolio.html
+@@ -10,7 +10,7 @@
+ 
+     <link rel="stylesheet" href="./static/css/styles.css?v=12">
+     <link rel="stylesheet" href="./static/css/visual_excellence.css?v=3">
+-    <link rel="stylesheet" href="./static/css/portfolio.css?v=44">
++    <link rel="stylesheet" href="./static/css/portfolio.css?v=45">
+     <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+     <script>window.echarts || document.write('<script src="./static/vendor/echarts.min.js"><\/script>')</script>
+@@ -143,11 +143,12 @@
+                                 <th class="num">市值</th>
+                                 <th class="num">仓位占比</th>
+                                 <th class="num">浮动盈亏</th>
++                                <th>跟踪止盈</th>
+                             </tr>
+-                            <tr class="pf-legend-row"><th colspan="8" class="pf-legend">价格来源：收盘价 = 当日收盘价（Tushare） · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格</th></tr>
++                            <tr class="pf-legend-row"><th colspan="9" class="pf-legend">价格来源：收盘价 = 当日收盘价（Tushare） · 券商 = 导入当日券商报价 · <span class="ac-tag ac-tag-warn">成本价兜底</span> = 现价缺失，市值与盈亏不真实 · ETF 价格 3 位小数、个股 2 位 · 占比条以最大持仓为满格 · 跟踪止盈只显示状态，点击到决策中枢查看与执行</th></tr>
+                         </thead>
+                         <tbody id="positions-body">
+-                            <tr><td colspan="8" class="pf-table-empty">数据加载中…</td></tr>
++                            <tr><td colspan="9" class="pf-table-empty">数据加载中…</td></tr>
+                         </tbody>
+                     </table>
+                 </div>
+@@ -644,8 +645,8 @@
+     <script src="./static/js/portfolio_modules.js?v=2"></script>
+     <script src="./static/js/portfolio_compliance.js?v=3"></script>
+     <script src="./static/js/portfolio_kpis.js?v=5"></script>
+-    <script src="./static/js/portfolio_view.js?v=3"></script>
+-    <script src="./static/js/portfolio_manager.js?v=55"></script>
++    <script src="./static/js/portfolio_view.js?v=4"></script>
++    <script src="./static/js/portfolio_manager.js?v=56"></script>
+     <script src="./static/js/lookthrough_panel.js?v=6"></script>
+     <script src="./static/js/decision_review_panel.js?v=4"></script>
+ <script src="./static/js/sidebar.js?v=5"></script>
+diff --git a/quant_dashboard/static/css/portfolio.css b/quant_dashboard/static/css/portfolio.css
+index 7c4ed28..2232d81 100644
+--- a/quant_dashboard/static/css/portfolio.css
++++ b/quant_dashboard/static/css/portfolio.css
+@@ -537,6 +537,10 @@ textarea.pf-input { height: auto; padding: 6px 8px; }
+ #pf-positions-table td.num .pf-weight-cell { align-items: flex-end; }
+ #pf-positions-table .pf-weight-bar { width: 72px; }
+ #pf-positions-table .pf-src-cost { margin-left: 4px; }
++.pf-trail-td { white-space: nowrap; }
++.pf-trail-link { text-decoration: none; }
++.pf-trail-ok { font-size: 0.7rem; color: var(--dc-text-muted); }
++.pf-trail-na { font-size: 0.7rem; color: var(--dc-text-subtle); }
+ 
+ /* ── V3 下半页: 穿透中性条、风险贡献并排条、决定记录、成交记录 ── */
+ .lt-compliance { margin-top: 12px; }
+diff --git a/quant_dashboard/static/js/portfolio_manager.js b/quant_dashboard/static/js/portfolio_manager.js
+index 68c901e..6c310b4 100644
+--- a/quant_dashboard/static/js/portfolio_manager.js
++++ b/quant_dashboard/static/js/portfolio_manager.js
+@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
+                 renderValuation(result.data);
+                 if (window.PfKpis) window.PfKpis.load();   // 账户收益 / 组合波动 / 当前回撤 / 风险贡献 (唯一来源)
+                 if (window.PfKpis) window.PfKpis.loadExecTarget();   // 执行目标: 决策中枢同一接口 (/decision/hub), 只读
++                loadTrailing();                                       // 跟踪止盈状态: 决策中枢同一接口, 只读
+                 // 2026-11-03 组合页精简 P4: 关闭的模块不发请求 (config/portfolio_modules.json)
+                 pmReady().then(() => {
+                     if (pmOn('sector_pie')) loadRisk();
+@@ -204,13 +205,24 @@ document.addEventListener('DOMContentLoaded', function () {
+ 
+     // 2026-11-04 视觉轮 V2: 持仓表由 static/js/portfolio_view.js 渲染 (按市值降序、类型标签、ETF 价格 3 位、
+     // 中性占比条以最大持仓为满格、红涨绿跌、成本价兜底 warn 标签、名称与行业转义)
++    // 跟踪止盈状态 (只读, 决策中枢同一接口): undefined = 加载中, null = 读取失败, {code: status}
++    let lastPositions = [], trailState;
+     function renderPositionsTable(positions) {
++        lastPositions = positions || [];
+         const body = document.getElementById('positions-body');
+-        body.innerHTML = window.PfView ? window.PfView.positionsBodyHtml(positions || [])
+-            : '<tr><td colspan="8" class="pf-table-empty">持仓表组件未加载</td></tr>';
++        body.innerHTML = window.PfView ? window.PfView.positionsBodyHtml(lastPositions, trailState)
++            : '<tr><td colspan="9" class="pf-table-empty">持仓表组件未加载</td></tr>';
+         // 手机 375: 卡片列表 (CSS 按宽度切换, 不横向滚动)
+         const cards = document.getElementById('positions-cards');
+-        if (cards && window.PfView) cards.innerHTML = window.PfView.positionCardsHtml(positions || []);
++        if (cards && window.PfView) cards.innerHTML = window.PfView.positionCardsHtml(lastPositions, trailState);
++    }
++
++    async function loadTrailing() {
++        try {
++            const r = await fetch('/api/v1/portfolio/trailing-stops');
++            trailState = r.ok && window.PfView ? window.PfView.trailMap(await r.json()) : null;
++        } catch (e) { trailState = null; }
++        renderPositionsTable(lastPositions);
+     }
+ 
+     // ════════════════════════════════════
+diff --git a/quant_dashboard/static/js/portfolio_view.js b/quant_dashboard/static/js/portfolio_view.js
+index 422d437..b56b476 100644
+--- a/quant_dashboard/static/js/portfolio_view.js
++++ b/quant_dashboard/static/js/portfolio_view.js
+@@ -74,8 +74,32 @@
+             `<div class="pf-weight-bar"><div class="pf-weight-fill" style="width:${width.toFixed(1)}%"></div></div></div></td>`;
+     }
+ 
++    // ── 跟踪止盈状态 (2026-11-04 复核后加, 只读) ──
++    // 读决策中枢跟踪止盈面板同一接口 /api/v1/portfolio/trailing-stops 的 positions[].status, 前端不判定。
++    // 只写状态, 不写操作 ("卖出 / 止盈"等留给决策中枢); 止损已触发是真实的禁止状态 → 阻断实底 + 文字。
++    // 点击跳决策中枢跟踪止盈面板 (唯一止损执行入口)。
++    const TRAIL = {
++        RED:     { cls: 'ac-tag ac-tag-block',  text: '止损已触发' },
++        LEGACY:  { cls: 'ac-tag ac-tag-legacy', text: '遗留越线' },
++        YELLOW:  { cls: 'ac-tag ac-tag-warn',   text: '临近止损线' },
++        ACTION:  { cls: 'ac-tag ac-tag-info',   text: '到达止盈档' },
++        GREEN:   { cls: 'pf-trail-ok',          text: '正常' },
++        NO_DATA: { cls: 'pf-trail-na',          text: '无行情' },
++    };
++    const TRAIL_HREF = 'decision.html#trailing-stop-panel';
++    /** trail: undefined = 加载中; null = 读取失败; {code: status} = 读到。 */
++    function trailHtml(tsCode, trail) {
++        if (trail === undefined) return '<span class="pf-trail-na">…</span>';
++        if (trail === null) return '<span class="pf-trail-na" title="跟踪止盈读取失败，以决策中枢为准">--</span>';
++        const s = trail[tsCode];
++        const m = TRAIL[s];
++        if (!m) return '<span class="pf-trail-na" title="跟踪止盈无此持仓">--</span>';
++        return `<a class="pf-trail-link" href="${TRAIL_HREF}" title="跟踪止盈：${esc(s)}，在决策中枢查看"><span class="${m.cls}">${m.text}</span></a>`;
++    }
++    const isAlertTrail = (tsCode, trail) => !!(trail && ['RED', 'LEGACY', 'YELLOW', 'ACTION'].includes(trail[tsCode]));
++
+     /** 一行持仓 (桌面表格)。 */
+-    function positionRowHtml(p, maxW) {
++    function positionRowHtml(p, maxW, trail) {
+         const [code, ex = ''] = String(p.ts_code || '').split('.');
+         const type = instrumentType(p.ts_code);
+         const cls = pnlClass(p.pnl);
+@@ -91,15 +115,16 @@
+             ${weightCell(p, maxW)}
+             <td class="num pf-pnl-cell ${cls}"><span class="pf-pnl-val">${pnl === null ? '--' : signed(pnl, money(pnl))}</span>` +
+             `<span class="pf-pnl-pct">${pct === null ? '--' : signed(pct, `${pct.toFixed(2)}%`)}</span></td>
++            <td class="pf-trail-td">${trailHtml(p.ts_code, trail)}</td>
+         </tr>`;
+     }
+ 
+     /** 持仓表 tbody (按市值降序)。 */
+-    function positionsBodyHtml(positions) {
++    function positionsBodyHtml(positions, trail) {
+         const rows = sortByMarketValue(positions);
+-        if (!rows.length) return '<tr><td colspan="8" class="pf-table-empty">当前无持仓</td></tr>';
++        if (!rows.length) return '<tr><td colspan="9" class="pf-table-empty">当前无持仓</td></tr>';
+         const maxW = maxWeight(rows);
+-        return rows.map(p => positionRowHtml(p, maxW)).join('');
++        return rows.map(p => positionRowHtml(p, maxW, trail)).join('');
+     }
+ 
+     /** KPI 来源行: 持仓市值 / 现金。 */
+@@ -119,24 +144,25 @@
+     // 成本价兜底的持仓不参与合并 (warn 标签须始终可见); weight 缺失的持仓不参与合并。
+     const MOBILE_GROUP_BELOW_PCT = 2;
+ 
+-    function splitForMobile(positions) {
++    function splitForMobile(positions, trail) {
+         const rows = sortByMarketValue(positions);
+         const main = [], small = [];
+         rows.forEach(p => {
+             const w = num(p.weight);
+-            if (w !== null && w < MOBILE_GROUP_BELOW_PCT && p.price_source !== 'cost') small.push(p); else main.push(p);
++            // 成本价兜底、跟踪止盈非正常 (止损已触发 / 临近等) 的持仓不参与合并, 标签须始终可见
++            if (w !== null && w < MOBILE_GROUP_BELOW_PCT && p.price_source !== 'cost' && !isAlertTrail(p.ts_code, trail)) small.push(p); else main.push(p);
+         });
+         // 只有 1 只时不合并 (合并不省空间)
+         return small.length >= 2 ? { main, small } : { main: rows, small: [] };
+     }
+ 
+-    function positionCardHtml(p, maxW) {
++    function positionCardHtml(p, maxW, trail) {
+         const [code, ex = ''] = String(p.ts_code || '').split('.');
+         const type = instrumentType(p.ts_code);
+         const w = num(p.weight), pct = num(p.pnl_pct), pnl = num(p.pnl);
+         const width = barWidth(w, maxW);
+         return `<details class="pf-card" data-code="${esc(p.ts_code)}"><summary>
+-            <span class="pf-card-name"><b>${esc(p.name)}</b> <span class="pf-code-ext">${esc(code)}.${esc(ex)}</span>${type ? ` <span class="pf-type-tag">${type}</span>` : ''}${p.price_source === 'cost' ? ` ${SRC.cost}` : ''}</span>
++            <span class="pf-card-name"><b>${esc(p.name)}</b> <span class="pf-code-ext">${esc(code)}.${esc(ex)}</span>${type ? ` <span class="pf-type-tag">${type}</span>` : ''}${p.price_source === 'cost' ? ` ${SRC.cost}` : ''}${isAlertTrail(p.ts_code, trail) ? ` ${trailHtml(p.ts_code, trail)}` : ''}</span>
+             <span class="pf-card-mv num">${money(p.market_value)}<small>${w === null ? '--' : `${w.toFixed(1)}%`}</small>` +
+             `${width === null ? '' : `<span class="pf-weight-bar"><span class="pf-weight-fill" style="width:${width.toFixed(1)}%"></span></span>`}</span>
+             <span class="pf-card-pnl num ${pnlClass(p.pnl)}">${pct === null ? '--' : signed(pct, `${pct.toFixed(2)}%`)}</span>
+@@ -146,23 +172,34 @@
+             <dt>成本价</dt><dd class="num">${priceText(p.cost, p.ts_code)}</dd>
+             <dt>现价</dt><dd class="num">${priceText(p.price, p.ts_code)}${sourceTag(p.price_source)}</dd>
+             <dt>浮动盈亏</dt><dd class="num ${pnlClass(p.pnl)}">${pnl === null ? '--' : signed(pnl, money(pnl))}</dd>
++            <dt>跟踪止盈</dt><dd>${trailHtml(p.ts_code, trail)}</dd>
+         </dl></details>`;
+     }
+ 
+     /** 手机卡片列表: 名称 + 代码 + 类型 / 市值 + 占比 / 盈亏%; 点开看其余字段; 小仓位合并为"其余 N 只 · 合计 x%" (默认收起)。 */
+-    function positionCardsHtml(positions) {
++    function positionCardsHtml(positions, trail) {
+         const all = sortByMarketValue(positions);
+         if (!all.length) return '<div class="pf-table-empty">当前无持仓</div>';
+         const maxW = maxWeight(all);
+-        const { main, small } = splitForMobile(all);
++        const { main, small } = splitForMobile(all, trail);
+         const total = small.reduce((s, p) => s + (num(p.weight) || 0), 0);
+-        return main.map(p => positionCardHtml(p, maxW)).join('') + (small.length
++        return main.map(p => positionCardHtml(p, maxW, trail)).join('') + (small.length
+             ? `<details class="pf-card-group"><summary>其余 ${small.length} 只 · 合计 ${total.toFixed(1)}%<small>（各不到 ${MOBILE_GROUP_BELOW_PCT}%，展示合并）</small></summary>` +
+-              small.map(p => positionCardHtml(p, maxW)).join('') + '</details>'
++              small.map(p => positionCardHtml(p, maxW, trail)).join('') + '</details>'
+             : '');
+     }
+ 
++    /** /portfolio/trailing-stops 响应 → {ts_code: status}; 不可用 null。 */
++    function trailMap(resp) {
++        const d = resp && (resp.data || resp);
++        if (!d || !Array.isArray(d.positions)) return null;
++        const m = {};
++        d.positions.forEach(p => { if (p && p.ts_code && p.status) m[p.ts_code] = p.status; });
++        return m;
++    }
++
+     root.PfView = { esc, instrumentType, isEtf, priceText, pnlClass, sortByMarketValue, maxWeight, barWidth,
+                     positionRowHtml, positionsBodyHtml, positionCardsHtml, splitForMobile, kpiSources, money,
++                    trailHtml, trailMap, TRAIL,
+                     MOBILE_GROUP_BELOW_PCT };
+ })(typeof window !== 'undefined' ? window : globalThis);
+diff --git a/quant_dashboard/tests/test_import_valuation_time.cjs b/quant_dashboard/tests/test_import_valuation_time.cjs
+index 63dcc4f..ae5c49c 100644
+--- a/quant_dashboard/tests/test_import_valuation_time.cjs
++++ b/quant_dashboard/tests/test_import_valuation_time.cjs
+@@ -32,6 +32,6 @@ assert.deepEqual(picks, ['15:00', '11:30', '09:00']);
+ for (const p of picks) assert(re.test(p), p);
+ assert.match(pm, /importValInput\.value = b\.dataset\.valtime;\s+syncImportConfirm\(\)/);
+ assert.match(pm, /forEach\(b => b\.classList\.remove\('active'\)\)/);   // 重新打开时清除选中
+-// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53, V3 (成交记录表格 / 手机卡片 / 穿透默认折叠) 53 → 54, 复核 (开关脚本缺失按关闭) 54 → 55
+-assert.match(html, /portfolio_manager\.js\?v=55"/);
++// 2026-11-04 视觉轮改动 portfolio_manager.js: V1 (去 emoji / 涨跌语义类) 51 → 52, V2 (持仓表改由 portfolio_view.js 渲染) 52 → 53, V3 (成交记录表格 / 手机卡片 / 穿透默认折叠) 53 → 54, 复核 (开关脚本缺失按关闭) 54 → 55, 跟踪止盈状态列 55 → 56
++assert.match(html, /portfolio_manager\.js\?v=56"/);
+ console.log('import valuation time OK');
+diff --git a/quant_dashboard/tests/test_portfolio_visual.cjs b/quant_dashboard/tests/test_portfolio_visual.cjs
+index e49e574..62a97a9 100644
+--- a/quant_dashboard/tests/test_portfolio_visual.cjs
++++ b/quant_dashboard/tests/test_portfolio_visual.cjs
+@@ -342,6 +342,23 @@ assert(cards.includes('<span class="pf-type-tag">ETF</span>') && cards.includes(
+ assert(!V.positionsBodyHtml(MP).includes('其余'), '桌面不合并');
+ assert(pm.includes("matchMedia('(max-width: 768px)')") && pm.includes("body.classList.remove('pf-expanded')"), '手机端穿透默认折叠');
+ 
++// 15) 跟踪止盈状态列 (复核后加, 只读): 读决策中枢同一接口; 只写状态不写操作; 止损已触发 = 阻断实底 + 文字; 点击跳决策中枢
++const TS = { data: { positions: [{ ts_code: '588000.SH', status: 'GREEN' }, { ts_code: '688825.SH', status: 'RED' }, { ts_code: '159995.SZ', status: 'LEGACY' }] } };
++const tm = V.trailMap(TS);
++assert.equal(tm['688825.SH'], 'RED');
++assert.equal(V.trailMap({ data: {} }), null);
++const tb = V.positionsBodyHtml(POS, tm);
++const trow = code => tb.slice(tb.indexOf(`data-code="${code}"`), tb.indexOf('</tr>', tb.indexOf(`data-code="${code}"`)));
++assert(trow('688825.SH').includes('<span class="ac-tag ac-tag-block">止损已触发</span>') && trow('688825.SH').includes('href="decision.html#trailing-stop-panel"'));
++assert(trow('159995.SZ').includes('ac-tag-legacy') && trow('588000.SH').includes('class="pf-trail-ok">正常'));
++assert(V.positionsBodyHtml(POS, null).includes('跟踪止盈读取失败'), '读取失败显示 --');
++assert(!/卖出|止盈卖|次日开盘/.test(JSON.stringify(V.TRAIL)), '只写状态, 不写操作');
++assert(html.includes('<th>跟踪止盈</th>') && !html.includes('colspan="8"'));
++assert(pm.includes("fetch('/api/v1/portfolio/trailing-stops')") && read('static/js/decision/trailing_stop_panel.js').includes("const BASE = '/api/v1/portfolio'"), '与决策中枢同一接口');
++const MPT = MP.map(p => p.ts_code === '688825.SH' ? p : p);
++assert(V.splitForMobile(MPT, { '688825.SH': 'RED' }).main.some(p => p.ts_code === '688825.SH'), '止损已触发不参与手机合并');
++assert(V.positionCardsHtml(MPT, { '688825.SH': 'RED' }).match(/止损已触发/g).length >= 2, '手机卡片摘要行可见止损已触发');
++
+ (async () => {
+     // 渲染: 回撤 / 波动数字 className 只有 pf-kpi-value; 账户收益带涨跌类; 回撤档位为状态标签
+     kctx.fetch = async url => ({ ok: true, json: async () => ({ status: 'success',
+-- 
+2.43.0
+
