@@ -1,0 +1,11 @@
+[2026-11-04 20:11:01] ===== AlphaCore Push v4.1 started =====
+[2026-11-04 20:11:01] Script root: D:\FIONA\google AI
+[2026-11-04 20:11:01] Git: git version 2.54.0.windows.1
+[2026-11-04 20:11:01] --- Processing: quant_dashboard ---
+[2026-11-04 20:11:01] quant_dashboard: pre-push check started
+[2026-11-04 20:11:15] pre-push: 用户确认 2 个代码文件不随本次提交: quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md, quant_dashboard/docs/SITE_SLIMMING_ROUNDS.md
+[2026-11-04 20:13:43] pre-push: 快照测试 147s | AST: 通过 | pytest: 2172 passed, 1 skipped, 35 deselected, 52 warnings, 2 subtests passed in 133.69s (0:02:13) | production_check: 通过 | 前端: 34/34 通过
+[2026-11-04 20:11:01] quant_dashboard: pre-push check passed
+[2026-11-04 20:11:01] quant_dashboard: Committing: 配置：暂停月度 CI（strategy_ci_monthly），防止自动发布参数；待第 0 轮改为只评估不发布后恢复
+[2026-11-04 20:11:01] quant_dashboard: PUSHED at 1cec27a
+[2026-11-04 20:11:01] --- Processing: NEWS ---
