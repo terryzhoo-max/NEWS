@@ -1,0 +1,10 @@
+[2026-11-04 23:23:25] ===== AlphaCore Push v4.1 started =====
+[2026-11-04 23:23:25] Script root: D:\FIONA\google AI
+[2026-11-04 23:23:25] Git: git version 2.54.0.windows.1
+[2026-11-04 23:23:25] --- Processing: quant_dashboard ---
+[2026-11-04 23:23:25] quant_dashboard: pre-push check started
+[2026-11-04 23:25:50] pre-push: 快照测试 140s | AST: 通过 | pytest: 2172 passed, 1 skipped, 35 deselected, 52 warnings, 2 subtests passed in 124.50s (0:02:04) | production_check: 通过 | 前端: 35/35 通过
+[2026-11-04 23:23:25] quant_dashboard: pre-push check passed
+[2026-11-04 23:23:25] quant_dashboard: Committing: 决策中枢视觉2·提交1：跟踪止盈回撤刹车改为说明性写法（k档约束→执行目标上限x），写明档位进入/退出条件；面板不再显示回撤口径仓位数字与预算下仓位；新增 test_decision_visual_2
+[2026-11-04 23:23:25] quant_dashboard: PUSHED at 3fa18c1
+[2026-11-04 23:23:25] --- Processing: NEWS ---
