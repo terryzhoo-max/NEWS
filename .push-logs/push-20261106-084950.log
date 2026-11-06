@@ -7,3 +7,9 @@
 [2026-11-06 08:49:50] quant_dashboard: pre-push check passed
 [2026-11-06 08:49:50] quant_dashboard: PUSHED at a4aabf6
 [2026-11-06 08:49:50] --- Processing: NEWS ---
+[2026-11-06 08:49:50] NEWS: Committing: docs: 第1轮完成(会话E组末: 部署复核、隐藏开关清单、后续批次)
+[2026-11-06 08:49:50] NEWS: PUSHED at 7c17798
+[2026-11-06 08:49:50] quant_dashboard: PUSHED
+[2026-11-06 08:49:50] NEWS: PUSHED
+[2026-11-06 08:49:50] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-06 08:49:50] ===== AlphaCore Push v4.1 finished =====
