@@ -7,3 +7,9 @@
 [2026-11-06 01:59:53] quant_dashboard: pre-push check passed
 [2026-11-06 01:59:53] quant_dashboard: PUSHED at 6526c22
 [2026-11-06 01:59:53] --- Processing: NEWS ---
+[2026-11-06 01:59:53] NEWS: Committing: 第1轮会话D: 1f 默认入口切到决策中枢(/、/index.html 307, site_modules index 开关, manifest start_url, sw.js v6) + 1f-ui 侧边栏宏观背景/手机底栏/简报返回(sidebar.js v=207)
+[2026-11-06 01:59:53] NEWS: PUSHED at b01ca13
+[2026-11-06 01:59:53] quant_dashboard: PUSHED
+[2026-11-06 01:59:53] NEWS: PUSHED
+[2026-11-06 01:59:53] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-06 01:59:53] ===== AlphaCore Push v4.1 finished =====
