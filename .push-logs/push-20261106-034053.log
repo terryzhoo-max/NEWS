@@ -7,3 +7,9 @@
 [2026-11-06 03:40:53] quant_dashboard: pre-push check passed
 [2026-11-06 03:40:53] quant_dashboard: PUSHED at 9e59c58
 [2026-11-06 03:40:53] --- Processing: NEWS ---
+[2026-11-06 03:40:53] NEWS: Committing: 第1轮会话E: 1g-0 快照透传ERP v4档位字段 + 1g 决策中枢背景区摘要行/市场动态移到宏观背景 + 1g-1 首屏重算中 + 1h AI模块下线开关 + 1h-ui AI助手按钮
+[2026-11-06 03:40:53] NEWS: PUSHED at 84b55ee
+[2026-11-06 03:40:53] quant_dashboard: PUSHED
+[2026-11-06 03:40:53] NEWS: PUSHED
+[2026-11-06 03:40:53] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-06 03:40:53] ===== AlphaCore Push v4.1 finished =====
