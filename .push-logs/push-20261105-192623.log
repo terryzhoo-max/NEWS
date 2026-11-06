@@ -1,0 +1,11 @@
+[2026-11-05 19:26:23] ===== AlphaCore Push v4.1 started =====
+[2026-11-05 19:26:23] Script root: D:\FIONA\google AI
+[2026-11-05 19:26:23] Git: git version 2.54.0.windows.1
+[2026-11-05 19:26:23] --- Processing: quant_dashboard ---
+[2026-11-05 19:26:23] quant_dashboard: pre-push check started
+[2026-11-05 19:26:33] pre-push: 用户确认 5 个代码文件不随本次提交: quant_dashboard/docs/HOME_BACKGROUND_MERGE_PLAN.md, quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md, quant_dashboard/docs/SITE_SLIMMING_ROUNDS.md, quant_dashboard/services/auth_middleware.py, quant_dashboard/tests/test_read_auth.py
+[2026-11-05 19:29:52] pre-push: 快照测试 198s | AST: 通过 | pytest: 2325 passed, 1 skipped, 35 deselected, 102 warnings, 2 subtests passed in 174.95s (0:02:54) | production_check: 通过 | 前端: 37/37 通过
+[2026-11-05 19:26:23] quant_dashboard: pre-push check passed
+[2026-11-05 19:26:23] quant_dashboard: Committing: 第1轮 1a: 海外页海外AIAE标签删除违规内容(仓位矩阵/各档仓位区间/操作速查/风控手册/建议仓位null/标准温度), 标签改称读数; treasury.js v=212; 测试锁字样
+[2026-11-05 19:26:23] quant_dashboard: PUSHED at fc9df85
+[2026-11-05 19:26:23] --- Processing: NEWS ---
