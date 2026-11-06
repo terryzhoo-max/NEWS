@@ -7,3 +7,9 @@
 [2026-11-05 22:42:45] quant_dashboard: pre-push check passed
 [2026-11-05 22:42:45] quant_dashboard: PUSHED at c169301
 [2026-11-05 22:42:45] --- Processing: NEWS ---
+[2026-11-05 22:42:45] NEWS: Committing: 第1轮会话C: 1e 宏观背景页A股标签(默认) + 1e-2 ERP v4 档位改叫第N档·正常化ERP区间、去掉档位数字与买卖措辞
+[2026-11-05 22:42:45] NEWS: PUSHED at b432cb3
+[2026-11-05 22:42:45] quant_dashboard: PUSHED
+[2026-11-05 22:42:45] NEWS: PUSHED
+[2026-11-05 22:42:45] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-05 22:42:45] ===== AlphaCore Push v4.1 finished =====
