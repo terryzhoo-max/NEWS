@@ -7,3 +7,9 @@
 [2026-11-06 10:22:44] quant_dashboard: pre-push check passed
 [2026-11-06 10:22:44] quant_dashboard: PUSHED at 3dd0dde
 [2026-11-06 10:22:44] --- Processing: NEWS ---
+[2026-11-06 10:22:44] NEWS: Committing: 批次2 VIX 修复: 全站只用已确认的美股收盘(行为+界面) + 文档
+[2026-11-06 10:22:44] NEWS: PUSHED at 8f70cc3
+[2026-11-06 10:22:44] quant_dashboard: PUSHED
+[2026-11-06 10:22:44] NEWS: PUSHED
+[2026-11-06 10:22:44] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-06 10:22:44] ===== AlphaCore Push v4.1 finished =====
