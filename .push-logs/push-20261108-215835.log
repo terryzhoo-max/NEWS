@@ -8,3 +8,9 @@
 [2026-11-08 21:58:35] quant_dashboard: Committing: docs: 批次2 VIX修复部署与核对记录(11-09 11:42 北京部署59224f8, 5项不变, VIX 25.64 已确认); 动量轮动证据部署回退登记与决定
 [2026-11-08 21:58:35] quant_dashboard: PUSHED at 0293365
 [2026-11-08 21:58:35] --- Processing: NEWS ---
+[2026-11-08 21:58:35] NEWS: Committing: docs: 批次2 VIX修复部署与核对记录(11-09 11:42 北京部署59224f8, 5项不变, VIX 25.64 已确认); 动量轮动证据部署回退登记与决定
+[2026-11-08 21:58:35] NEWS: PUSHED at 18b53b7
+[2026-11-08 21:58:35] quant_dashboard: PUSHED
+[2026-11-08 21:58:35] NEWS: PUSHED
+[2026-11-08 21:58:35] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-08 21:58:35] ===== AlphaCore Push v4.1 finished =====
