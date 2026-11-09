@@ -1,0 +1,10 @@
+[2026-11-08 21:58:35] ===== AlphaCore Push v4.1 started =====
+[2026-11-08 21:58:35] Script root: D:\FIONA\google AI
+[2026-11-08 21:58:35] Git: git version 2.54.0.windows.1
+[2026-11-08 21:58:35] --- Processing: quant_dashboard ---
+[2026-11-08 21:58:35] quant_dashboard: pre-push check started
+[2026-11-08 22:02:13] pre-push: 快照测试 213s | AST: 通过 | pytest: 2397 passed, 1 skipped, 35 deselected, 114 warnings, 2 subtests passed in 179.67s (0:02:59) | production_check: 通过 | 前端: 47/47 通过
+[2026-11-08 21:58:35] quant_dashboard: pre-push check passed
+[2026-11-08 21:58:35] quant_dashboard: Committing: docs: 批次2 VIX修复部署与核对记录(11-09 11:42 北京部署59224f8, 5项不变, VIX 25.64 已确认); 动量轮动证据部署回退登记与决定
+[2026-11-08 21:58:35] quant_dashboard: PUSHED at 0293365
+[2026-11-08 21:58:35] --- Processing: NEWS ---
