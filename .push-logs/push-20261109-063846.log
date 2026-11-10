@@ -8,3 +8,9 @@
 [2026-11-09 06:38:46] quant_dashboard: Committing: docs: 批次2 VIX 修复部署后时点核对 (11-09 日报规则模板成功 + 20:00 重启后 VIX 仍为 11-06 已确认收盘 25.64, 5项不变); 含上次未提交的部署与动量证据决定两段
 [2026-11-09 06:38:46] quant_dashboard: PUSHED at 444f746
 [2026-11-09 06:38:46] --- Processing: NEWS ---
+[2026-11-09 06:38:46] NEWS: Committing: docs: 批次2 VIX 修复部署后时点核对 (11-09 日报规则模板成功 + 20:00 重启后 VIX 仍为 11-06 已确认收盘 25.64, 5项不变); 含上次未提交的部署与动量证据决定两段
+[2026-11-09 06:38:46] NEWS: PUSHED at 7d7b9ee
+[2026-11-09 06:38:46] quant_dashboard: PUSHED
+[2026-11-09 06:38:46] NEWS: PUSHED
+[2026-11-09 06:38:46] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-09 06:38:46] ===== AlphaCore Push v4.1 finished =====
