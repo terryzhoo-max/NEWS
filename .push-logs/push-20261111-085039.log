@@ -1,0 +1,11 @@
+[2026-11-11 08:50:38] ===== AlphaCore Push v4.1 started =====
+[2026-11-11 08:50:38] Script root: D:\FIONA\google AI
+[2026-11-11 08:50:38] Git: git version 2.54.0.windows.1
+[2026-11-11 08:50:38] --- Processing: quant_dashboard ---
+[2026-11-11 08:50:38] quant_dashboard: pre-push check started
+[2026-11-11 08:53:12] pre-push: 用户确认 15 个代码文件不随本次提交: quant_dashboard/decision.html, quant_dashboard/docs/PLAN_B_IMPLEMENTATION_LOG.md, quant_dashboard/portfolio.html, quant_dashboard/routers/trailing.py, quant_dashboard/services/portfolio_vol.py, quant_dashboard/services/risk_state.py, quant_dashboard/static/css/trailing_stop.css, quant_dashboard/static/css/vol_budget.css, quant_dashboard/static/js/decision/trailing_stop_panel.js, quant_dashboard/static/js/decision/vol_budget_panel.js, quant_dashboard/static/js/portfolio_kpis.js, quant_dashboard/tests/test_decision_macro_bg_line.cjs, quant_dashboard/tests/test_export_coverage_frontend.cjs, quant_dashboard/tests/test_batch1_c5_panel_risk_state.cjs, quant_dashboard/tests/test_batch1_c5_panel_risk_state.py
+[2026-11-11 08:56:19] pre-push: 快照测试 186s | AST: 通过 | pytest: 2474 passed, 1 skipped, 35 deselected, 114 warnings, 2 subtests passed in 164.86s (0:02:44) | production_check: 通过 | 前端: 47/47 通过
+[2026-11-11 08:50:38] quant_dashboard: pre-push check passed
+[2026-11-11 08:50:38] quant_dashboard: Committing: 批次1 C5: 面板回撤读数按风险状态 (现算差0.1pp以上另起一行; 截至/近似标签; 波动预算标尺VIX一档; 组合页近似标签); 删除推送日志误生成的2个文件
+[2026-11-11 08:50:38] quant_dashboard: PUSHED at 02fe23b
+[2026-11-11 08:50:38] --- Processing: NEWS ---
