@@ -9,3 +9,9 @@
 [2026-11-11 09:48:06] quant_dashboard: Committing: 批次1 C2 部署后修正: 可用减余额只作提示不参与近似判定 (卖出所得T+1入余额致11-07对账单误判疑似清算前导出)
 [2026-11-11 09:48:06] quant_dashboard: PUSHED at e496489
 [2026-11-11 09:48:06] --- Processing: NEWS ---
+[2026-11-11 09:48:06] NEWS: Committing: 批次1 C2 部署后修正: 可用减余额只作提示不参与近似判定 (卖出所得T+1入余额致11-07对账单误判疑似清算前导出)
+[2026-11-11 09:48:06] NEWS: PUSHED at 62f84ad
+[2026-11-11 09:48:06] quant_dashboard: PUSHED
+[2026-11-11 09:48:06] NEWS: PUSHED
+[2026-11-11 09:48:06] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 09:48:06] ===== AlphaCore Push v4.1 finished =====
