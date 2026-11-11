@@ -8,3 +8,9 @@
 [2026-11-11 07:36:11] quant_dashboard: Committing: 批次1 C3: 需降仓金额统一口径 (执行目标 + 唯一当前仓位 account_exposure; 执行目标未重算/不可用时不显示金额)
 [2026-11-11 07:36:11] quant_dashboard: PUSHED at b90422c
 [2026-11-11 07:36:11] --- Processing: NEWS ---
+[2026-11-11 07:36:11] NEWS: Committing: 批次1 C3: 需降仓金额统一口径 (执行目标 + 唯一当前仓位 account_exposure; 执行目标未重算/不可用时不显示金额)
+[2026-11-11 07:36:11] NEWS: PUSHED at e82b96c
+[2026-11-11 07:36:11] quant_dashboard: PUSHED
+[2026-11-11 07:36:11] NEWS: PUSHED
+[2026-11-11 07:36:11] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 07:36:11] ===== AlphaCore Push v4.1 finished =====
