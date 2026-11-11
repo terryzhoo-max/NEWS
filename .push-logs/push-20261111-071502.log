@@ -8,3 +8,9 @@
 [2026-11-11 07:15:01] quant_dashboard: Committing: 批次1 C1: 回撤持仓基准日(盘前对账单→前一交易日) + 风险状态带净值截止日/缺行情/松档点 + 过期按净值截止日 + 新任务逾期从注册起算
 [2026-11-11 07:15:01] quant_dashboard: PUSHED at 2029c7e
 [2026-11-11 07:15:01] --- Processing: NEWS ---
+[2026-11-11 07:15:01] NEWS: Committing: 批次1 C1: 回撤持仓基准日(盘前对账单→前一交易日) + 风险状态带净值截止日/缺行情/松档点 + 过期按净值截止日 + 新任务逾期从注册起算
+[2026-11-11 07:15:01] NEWS: PUSHED at f5c7f6f
+[2026-11-11 07:15:01] quant_dashboard: PUSHED
+[2026-11-11 07:15:01] NEWS: PUSHED
+[2026-11-11 07:15:01] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 07:15:01] ===== AlphaCore Push v4.1 finished =====
