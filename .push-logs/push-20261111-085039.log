@@ -9,3 +9,9 @@
 [2026-11-11 08:50:38] quant_dashboard: Committing: 批次1 C5: 面板回撤读数按风险状态 (现算差0.1pp以上另起一行; 截至/近似标签; 波动预算标尺VIX一档; 组合页近似标签); 删除推送日志误生成的2个文件
 [2026-11-11 08:50:38] quant_dashboard: PUSHED at 02fe23b
 [2026-11-11 08:50:38] --- Processing: NEWS ---
+[2026-11-11 08:50:38] NEWS: Committing: 批次1 C5: 面板回撤读数按风险状态 (现算差0.1pp以上另起一行; 截至/近似标签; 波动预算标尺VIX一档; 组合页近似标签); 删除推送日志误生成的2个文件
+[2026-11-11 08:50:38] NEWS: PUSHED at aaa897e
+[2026-11-11 08:50:38] quant_dashboard: PUSHED
+[2026-11-11 08:50:38] NEWS: PUSHED
+[2026-11-11 08:50:38] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 08:50:38] ===== AlphaCore Push v4.1 finished =====
