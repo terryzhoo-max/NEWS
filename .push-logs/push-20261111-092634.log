@@ -9,3 +9,9 @@
 [2026-11-11 09:26:34] quant_dashboard: Committing: 批次1 C5 补提交: 面板回撤读数按风险状态 (现算差0.1pp以上另起一行; 截至/近似标签; 波动预算标尺VIX一档; 组合页近似标签); 上一提交02fe23b实际只含删除2个误生成文件
 [2026-11-11 09:26:34] quant_dashboard: PUSHED at 0376893
 [2026-11-11 09:26:34] --- Processing: NEWS ---
+[2026-11-11 09:26:34] NEWS: Committing: 批次1 C5 补提交: 面板回撤读数按风险状态 (现算差0.1pp以上另起一行; 截至/近似标签; 波动预算标尺VIX一档; 组合页近似标签); 上一提交02fe23b实际只含删除2个误生成文件
+[2026-11-11 09:26:34] NEWS: PUSHED at a740f9c
+[2026-11-11 09:26:34] quant_dashboard: PUSHED
+[2026-11-11 09:26:34] NEWS: PUSHED
+[2026-11-11 09:26:34] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 09:26:34] ===== AlphaCore Push v4.1 finished =====
