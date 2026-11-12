@@ -9,3 +9,9 @@
 [2026-11-11 10:01:40] quant_dashboard: Committing: data: 海外ERP月度数据更新
 [2026-11-11 10:01:40] quant_dashboard: PUSHED at 51f8e00
 [2026-11-11 10:01:40] --- Processing: NEWS ---
+[2026-11-11 10:01:40] NEWS: Committing: data: 海外ERP月度数据更新
+[2026-11-11 10:01:40] NEWS: PUSHED at 7722774
+[2026-11-11 10:01:40] quant_dashboard: PUSHED
+[2026-11-11 10:01:40] NEWS: PUSHED
+[2026-11-11 10:01:40] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-11 10:01:40] ===== AlphaCore Push v4.1 finished =====
