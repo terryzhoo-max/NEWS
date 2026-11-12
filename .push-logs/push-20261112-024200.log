@@ -9,3 +9,9 @@
 [2026-11-12 02:42:00] quant_dashboard: Committing: docs: 批次1收尾核对记录 + 双层仓位v1包A合并记录
 [2026-11-12 02:42:00] quant_dashboard: PUSHED at f44240c
 [2026-11-12 02:42:00] --- Processing: NEWS ---
+[2026-11-12 02:42:00] NEWS: Committing: docs: 批次1收尾核对记录 + 双层仓位v1包A合并记录
+[2026-11-12 02:42:00] NEWS: PUSHED at afeb807
+[2026-11-12 02:42:00] quant_dashboard: PUSHED
+[2026-11-12 02:42:00] NEWS: PUSHED
+[2026-11-12 02:42:00] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-12 02:42:00] ===== AlphaCore Push v4.1 finished =====
