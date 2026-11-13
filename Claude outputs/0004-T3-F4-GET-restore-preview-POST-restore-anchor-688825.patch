@@ -1,0 +1,356 @@
+From 6c3b4c06722dbd9dbcf38b0b5d90d2f73438af98 Mon Sep 17 00:00:00 2001
+From: terryzhoo-max <terryzhoo@gmail.com>
+Date: Fri, 13 Nov 2026 08:01:51 -0600
+Subject: [PATCH 4/4] =?UTF-8?q?=E8=B7=9F=E8=B8=AA=E6=AD=A2=E7=9B=88=20T3:?=
+ =?UTF-8?q?=20F4=20=E6=81=A2=E5=A4=8D=E5=8F=AA=E8=AF=BB=E9=A2=84=E8=A7=88?=
+ =?UTF-8?q?=20GET=20restore-preview=20+=20=E5=86=99=E5=85=A5=20POST=20rest?=
+ =?UTF-8?q?ore-anchor=20(=E5=8F=AA=E6=8E=A5=E5=8F=97=E9=A2=84=E8=A7=88?=
+ =?UTF-8?q?=E6=8F=90=E8=AE=AE=E7=9A=84=20688825/688008=20=E4=B8=8E?=
+ =?UTF-8?q?=E5=BF=AB=E7=85=A7=E6=97=A5,=20=E6=95=B0=E5=80=BC=E6=8C=89?=
+ =?UTF-8?q?=E5=BF=AB=E7=85=A7=E6=AD=A2=E6=8D=9F=C3=B7=E6=94=B6=E7=9B=98?=
+ =?UTF-8?q?=E5=85=A8=E7=B2=BE=E5=BA=A6,=20=E5=BF=85=E5=A1=AB=E7=90=86?=
+ =?UTF-8?q?=E7=94=B1/=E6=9D=83=E5=A8=81=E7=8E=AF=E5=A2=83/=E5=86=99?=
+ =?UTF-8?q?=E6=93=8D=E4=BD=9C=E6=97=A5=E5=BF=97/=E5=AE=A1=E8=AE=A1)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVe56CLRS9UTURErLEp
+---
+ quant_dashboard/routers/trailing.py           |  36 +++++
+ .../services/trailing_stop_service.py         | 103 ++++++++++++
+ .../tests/test_trailing_restore_anchor.py     | 146 ++++++++++++++++++
+ 3 files changed, 285 insertions(+)
+ create mode 100644 quant_dashboard/tests/test_trailing_restore_anchor.py
+
+diff --git a/quant_dashboard/routers/trailing.py b/quant_dashboard/routers/trailing.py
+index 011b001..cfee6fa 100644
+--- a/quant_dashboard/routers/trailing.py
++++ b/quant_dashboard/routers/trailing.py
+@@ -6,6 +6,8 @@ POST /api/v1/portfolio/trailing-stops/{code}/rebaseline   遗留持仓重新基
+ POST /api/v1/portfolio/trailing-stops/{code}/sleeve       core / satellite
+ POST /api/v1/portfolio/trailing-stops/{code}/ack          台账外已执行的分批止盈手动确认
+ POST /api/v1/portfolio/trailing-stops/{code}/anchor       人工设定建仓日 (成交记录超出通达信 60 天导出范围时)
++GET  /api/v1/portfolio/trailing-stops/restore-preview    F4 只读预览: 锚点漂移前的快照值与恢复提议 (2026-11-13 T3)
++POST /api/v1/portfolio/trailing-stops/restore-anchor     F4 写入: 只接受预览提议的代码与快照日, 必填理由
+ GET  /api/v1/portfolio/drawdown                  组合级回撤: 实盘净值 / 分档刹车 / 前瞻 MDD / 预算仓位
+ POST /api/v1/portfolio/drawdown/baseline         重设回撤基准 (必须填写理由, 留痕; date 为空 = 撤销)
+ POST /api/v1/portfolio/trades/import             导入通达信历史成交 .txt (GBK/UTF-8, 幂等去重)
+@@ -43,6 +45,12 @@ class AnchorBody(BaseModel):
+     reason: str = ""
+ 
+ 
++class RestoreBody(BaseModel):
++    ts_code: str
++    snapshot_date: str
++    reason: str = ""
++
++
+ class AckBody(BaseModel):
+     stage: int
+     note: str = ""
+@@ -134,6 +142,34 @@ async def post_anchor(ts_code: str, body: AnchorBody):
+         return R.error(str(e), "ERR_ANCHOR")
+ 
+ 
++@router.get("/trailing-stops/restore-preview")
++async def get_restore_preview():
++    """F4 只读预览 (2026-11-13 T3): 不写状态 / 快照 / 缓存。"""
++    try:
++        from services.trailing_stop_service import restore_preview
++        return R.ok(await asyncio.to_thread(restore_preview))
++    except Exception as e:
++        logger.exception("restore preview failed")
++        return R.error(str(e), "ERR_RESTORE_PREVIEW")
++
++
++@router.post("/trailing-stops/restore-anchor")
++async def post_restore_anchor(body: RestoreBody, request: Request = None):
++    """F4 写入 (2026-11-13 T3): 权威环境 + 令牌 (中间件) + 写操作日志 + 必填理由; 只接受预览提议的代码与快照日。"""
++    require_authoritative(WRITE_MESSAGE)
++    _wl.attach(request, kind="trailing_anchor_restore", ts_code=body.ts_code[:16], snapshot_date=body.snapshot_date[:10])
++    try:
++        from services.trailing_stop_service import restore_anchor
++        data = await asyncio.to_thread(restore_anchor, body.ts_code, body.snapshot_date, body.reason)
++        _clear_cache()
++        return _wl.finish(request, R.ok(data, "已按快照恢复锚点与止损线下限 (已写入审计日志)"), ok_result="restored")
++    except ValueError as e:
++        return _wl.finish(request, R.error(str(e), "ERR_RESTORE"))
++    except Exception as e:
++        logger.exception("restore anchor failed")
++        return _wl.finish(request, R.error(str(e), "ERR_RESTORE"))
++
++
+ @router.get("/drawdown")
+ async def get_drawdown():
+     try:
+diff --git a/quant_dashboard/services/trailing_stop_service.py b/quant_dashboard/services/trailing_stop_service.py
+index 1ed0eac..098af7a 100644
+--- a/quant_dashboard/services/trailing_stop_service.py
++++ b/quant_dashboard/services/trailing_stop_service.py
+@@ -1161,6 +1161,109 @@ def clear_anchor(ts_code: str) -> dict:
+     return ps
+ 
+ 
++# ═══════════════════════════════════════════════════════
++#  F4 · 按日终快照恢复漂移前的锚点与止损线下限 (2026-11-13 T3, docs/TRAILING_ANCHOR_FIX_PLAN.md F4 / 第 5 节 D5)
++#  只读预览列出每只持仓"最近一次锚点变化前"的快照值; 只对 11-12 因导入对账单而漂移的两只提议恢复。
++#  写入只接受预览提议的代码与快照日, 数值由服务器按快照重新计算 (止损 ÷ 收盘全精度), 必填理由、入审计。
++#  10-23 至 11-06 的历史漂移不回溯 (已按新锚点连续发布多日, 回溯属于新的判断)。
++# ═══════════════════════════════════════════════════════
++RESTORE_PROPOSALS = {"688825.SH": "2026-11-12", "688008.SH": "2026-11-12"}
++
++
++def _snapshots_desc() -> list[dict]:
++    if not os.path.isdir(SNAPSHOT_DIR):
++        return []
++    out = []
++    for f in sorted((x for x in os.listdir(SNAPSHOT_DIR) if x.endswith(".json")), reverse=True):
++        snap = _read_json(os.path.join(SNAPSHOT_DIR, f), None)
++        if snap and snap.get("as_of"):
++            out.append(snap)
++    return out
++
++
++def _before_change(code: str, current_anchor: Optional[str], snaps: list[dict]) -> Optional[dict]:
++    """从最新快照往回找第一份锚点与当前不同的快照 = 最近一次锚点变化前的发布值。"""
++    for snap in snaps:
++        row = next((x for x in snap.get("positions", []) if x.get("ts_code") == code), None)
++        if not row or not row.get("anchor_date") or row.get("anchor_date") == current_anchor:
++            continue
++        stop, close = row.get("stop"), row.get("close")
++        ratio = (float(stop) / float(close)) if stop is not None and close else None
++        return {"snapshot_date": snap["as_of"], "anchor": row["anchor_date"], "anchor_quality": row.get("anchor_quality"),
++                "stop": stop, "close": close, "ratio": ratio, "qty": row.get("qty")}
++    return None
++
++
++def restore_preview(**report_kw) -> dict:
++    """只读: 不写状态、快照或缓存。report_kw 透传给 build_report (测试 / 回放注入数据)。"""
++    report_kw.pop("persist", None)
++    state = report_kw.pop("state", None) or load_state()
++    cur = build_report(state=copy.deepcopy(state), **report_kw)
++    snaps = _snapshots_desc()
++    proposals, positions = [], []
++    for r in cur.get("positions", []):
++        code = r["ts_code"]
++        ps = (state.get("positions") or {}).get(code, {})
++        bc = _before_change(code, r.get("anchor_date"), snaps)
++        want = RESTORE_PROPOSALS.get(code)
++        ok = bool(want and bc and bc["snapshot_date"] == want and bc["ratio"] is not None and bc["ratio"] > 0
++                  and not ps.get("manual_anchor") and not ps.get("rebaseline"))
++        item = {"ts_code": code, "name": r.get("name"), "close": r.get("close"), "as_of": r.get("as_of"),
++                "current_anchor": r.get("anchor_date"), "current_quality": r.get("anchor_quality"),
++                "current_stop": r.get("stop"), "current_status": r.get("status"),
++                "before_change": bc, "proposed": ok}
++        if want and not ok:
++            item["note"] = ("锚点已与快照一致, 无需恢复" if not bc else
++                            f"最近一次锚点变化前的快照为 {bc['snapshot_date']}, 与提议的 {want} 不同, 不提议")
++        positions.append(item)
++        if ok:
++            proposals.append(item)
++    if proposals:
++        st2 = copy.deepcopy(state)
++        for item in proposals:
++            _apply_restore(st2, item["ts_code"], item["before_change"], at="preview")
++        after = {x["ts_code"]: x for x in build_report(state=st2, **report_kw).get("positions", [])}
++        for item in proposals:
++            a = after.get(item["ts_code"]) or {}
++            item.update(restored_stop=a.get("stop"), restored_status=a.get("status"),
++                        restored_disaster_stop=a.get("disaster_stop"),
++                        would_trigger=(a.get("stop") is not None and item["close"] is not None
++                                       and float(item["close"]) < float(a["stop"])))
++    return {"as_of": cur.get("as_of"), "generated_at": cur.get("generated_at"), "read_only": True,
++            "proposals": proposals, "positions": positions,
++            "note": "只读预览: 只对 11-12 因导入对账单而漂移的 688825 / 688008 提议恢复 (锚点与下限取漂移前最后一份日终快照,"
++                    " 比值 = 止损 ÷ 收盘全精度); 写入需逐只 POST 并填写理由"}
++
++
++def _apply_restore(st: dict, code: str, bc: Mapping[str, Any], *, at: str) -> None:
++    ps = st.setdefault("positions", {}).setdefault(code, {})
++    ps["anchor_lock"] = {"date": bc["anchor"], "quality": bc.get("anchor_quality"), "at": at,
++                         "restored_from": bc["snapshot_date"]}
++    ps["published"] = {"anchor": bc["anchor"], "date": bc["snapshot_date"], "ratio": float(bc["ratio"])}
++
++
++def restore_anchor(ts_code: str, snapshot_date: str, reason: str, **report_kw) -> dict:
++    """F4 写入: 只接受只读预览中提议的代码与快照日; 必填理由 (≥4 字), 写入锚点锁与已发布下限并记审计。"""
++    reason = (reason or "").strip()
++    if len(reason) < 4:
++        raise ValueError("恢复必须填写理由 (≥4 字), 将写入审计日志")
++    pv = restore_preview(**report_kw)
++    item = next((x for x in pv["proposals"] if x["ts_code"] == ts_code), None)
++    if not item or item["before_change"]["snapshot_date"] != snapshot_date:
++        raise ValueError(f"{ts_code} @ {snapshot_date} 不在只读预览的恢复提议中 (请先查看预览)")
++    bc = item["before_change"]
++    with _LOCK:
++        st = load_state()
++        _apply_restore(st, ts_code, bc, at=datetime.now().isoformat(timespec="seconds"))
++        _audit(st, ts_code, "anchor_restore",
++               f"按 {bc['snapshot_date']} 日终快照恢复: 锚点 {bc['anchor']} ({bc.get('anchor_quality')}), 止损 {bc['stop']}"
++               f" / 收盘 {bc['close']} (比值 {bc['ratio']:.10f}); 恢复后止损线 {item.get('restored_stop')}; 理由: {reason}")
++        save_state(st)
++    return {"ts_code": ts_code, "snapshot_date": bc["snapshot_date"], "anchor": bc["anchor"], "ratio": bc["ratio"],
++            "restored_stop": item.get("restored_stop"), "restored_status": item.get("restored_status"),
++            "close": item.get("close"), "would_trigger": item.get("would_trigger")}
++
++
+ def ack_stage(ts_code: str, stage: int, note: str = "") -> dict:
+     """台账未覆盖的减仓 (如其他账户) 手动确认已执行。"""
+     with _LOCK:
+diff --git a/quant_dashboard/tests/test_trailing_restore_anchor.py b/quant_dashboard/tests/test_trailing_restore_anchor.py
+new file mode 100644
+index 0000000..ad1b6fe
+--- /dev/null
++++ b/quant_dashboard/tests/test_trailing_restore_anchor.py
+@@ -0,0 +1,146 @@
++"""跟踪止盈 F4 恢复 (2026-11-13 T3, docs/TRAILING_ANCHOR_FIX_PLAN.md F4 / 第 5 节 D5)
++
++只读预览按日终快照列出每只持仓"最近一次锚点变化前"的锚点 / 止损线 / 收盘 / 全精度比值, 只对 688825、688008
++(11-12 因导入对账单漂移的两只) 提议恢复; POST 只接受预览提议的代码与快照日, 数值由服务器按快照重新计算,
++必填理由、入审计、非权威环境拒绝。
++"""
++import json
++import os
++import sys
++
++import numpy as np
++import pandas as pd
++import pytest
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++
++from services import trailing_stop_service as svc  # noqa: E402
++
++DAYS = pd.bdate_range("2026-07-27", "2026-11-13")
++N = len(DAYS)
++
++
++def _bars(path, band=0.02):
++    c = pd.Series(path, index=DAYS, dtype=float)
++    return pd.DataFrame({"trade_date": DAYS.strftime("%Y%m%d"), "open": c.values, "high": (c * (1 + band)).values,
++                         "low": (c * (1 - band)).values, "close": c.values})
++
++
++CX = list(np.linspace(55, 46, 40)) + list(np.linspace(46, 41, N - 44)) + [40.45, 42.07, 40.97, 39.98]
++LQ = list(np.linspace(170, 220, 40)) + list(np.linspace(220, 155, N - 44)) + [154.8, 162.86, 162.89, 150.97]
++# 高波动 (日内 ±25%): 初始风险超过成本, 按锚点重放的止损线为负 → 恢复后由快照下限决定 (26.04 / 128.61)
++BARS = {"688825.SH": _bars(CX, 0.25), "688008.SH": _bars(LQ, 0.25), "002156.SZ": _bars([50.0] * N)}
++
++
++def _snap(as_of, rows):
++    return {"schema_version": 2, "as_of": as_of, "generated_at": f"{as_of}T16:30:00", "regime": "BEAR",
++            "positions": [dict(zip(("ts_code", "anchor_date", "anchor_quality", "stop", "close", "qty"), r),
++                               name=r[0], status="GREEN", stage=0) for r in rows]}
++
++
++def _setup(tmp_path, monkeypatch):
++    monkeypatch.setattr(svc, "STATE_PATH", str(tmp_path / "state.json"))
++    monkeypatch.setattr(svc, "SNAPSHOT_DIR", str(tmp_path / "snapshots"))
++    monkeypatch.setattr(svc, "LIVE_RISK_PATH", str(tmp_path / "risk_state_live.json"))
++    os.makedirs(svc.SNAPSHOT_DIR)
++    for d in ("2026-11-10", "2026-11-11", "2026-11-12"):
++        close = {"2026-11-10": (40.45, 154.8), "2026-11-11": (42.07, 162.86), "2026-11-12": (40.97, 162.89)}[d]
++        snap = _snap(d, [("688825.SH", "2026-11-02", "exact", 26.04, close[0], 451),
++                         ("688008.SH", "2026-08-27", "inferred_cost", 128.61, close[1], 400),
++                         ("002156.SZ", "2026-09-02", "exact", 36.51, 50.0, 600)])
++        json.dump(snap, open(os.path.join(svc.SNAPSHOT_DIR, f"{d}.json"), "w"))
++    json.dump(_snap("2026-11-13", [("688825.SH", "2026-07-27", "inferred_cost", -2.08, 39.98, 903),
++                                   ("688008.SH", "2026-08-26", "inferred_cost", 114.27, 150.97, 600),
++                                   ("002156.SZ", "2026-09-02", "exact", 36.51, 50.0, 600)]),
++              open(os.path.join(svc.SNAPSHOT_DIR, "2026-11-13.json"), "w"))
++    svc.save_state({"tracking_since": "2026-10-23", "audit": [], "last_eod": {"as_of": "2026-11-13"}, "positions": {
++        "688825.SH": {"published": {"anchor": "2026-07-27", "date": "2026-11-13", "ratio": -0.052026},
++                      "anchor_lock": {"date": "2026-07-27", "quality": "inferred_cost", "at": "x"}},
++        "688008.SH": {"published": {"anchor": "2026-08-26", "date": "2026-11-13", "ratio": 0.756905},
++                      "anchor_lock": {"date": "2026-08-26", "quality": "inferred_cost", "at": "x"}},
++        "002156.SZ": {"published": {"anchor": "2026-09-02", "date": "2026-11-13", "ratio": 0.73},
++                      "anchor_lock": {"date": "2026-09-02", "quality": "exact", "at": "x"}}}})
++
++
++STORE = {"import_date": "2026-11-12", "positions": {
++    "688825.SH": {"name": "长鑫科技", "amount": 903, "cost": 41.441},
++    "688008.SH": {"name": "澜起科技", "amount": 600, "cost": 194.253},
++    "002156.SZ": {"name": "通富微电", "amount": 600, "cost": 58.788}}}
++LEDGER = {"trades": [{"date": "2026-11-02", "time": "10:00:00", "ts_code": "688825.SH", "side": "buy", "qty": 451,
++                      "price": 41.48, "amount": 451 * 41.48, "key": "a"},
++                     {"date": "2026-09-02", "time": "10:00:00", "ts_code": "002156.SZ", "side": "buy", "qty": 600,
++                      "price": 58.788, "amount": 600 * 58.788, "key": "b"}], "imports": []}
++KW = dict(store=STORE, ledger=LEDGER, bars_loader=lambda c: BARS.get(c), regime="BEAR", aiae_regime=None,
++          today="2026-11-13")
++
++
++def test_preview_lists_pre_drift_values_and_proposes_only_two(tmp_path, monkeypatch):
++    _setup(tmp_path, monkeypatch)
++    before = open(svc.STATE_PATH, encoding="utf-8").read()
++    pv = svc.restore_preview(**KW)
++    assert open(svc.STATE_PATH, encoding="utf-8").read() == before            # 只读
++    by = {x["ts_code"]: x for x in pv["positions"]}
++    cx = by["688825.SH"]
++    assert cx["current_anchor"] == "2026-07-27" and cx["current_stop"] < 0
++    assert cx["before_change"]["snapshot_date"] == "2026-11-12" and cx["before_change"]["anchor"] == "2026-11-02"
++    assert cx["before_change"]["ratio"] == pytest.approx(26.04 / 40.97, abs=1e-12)
++    assert cx["proposed"] is True and cx["restored_stop"] == 26.04 and cx["would_trigger"] is False
++    lq = by["688008.SH"]
++    assert lq["proposed"] is True and lq["before_change"]["anchor"] == "2026-08-27" and lq["restored_stop"] == 128.61
++    assert by["002156.SZ"]["proposed"] is False and by["002156.SZ"]["before_change"] is None
++    assert sorted(p["ts_code"] for p in pv["proposals"]) == ["688008.SH", "688825.SH"]
++
++
++def test_post_restores_lock_and_floor_full_precision(tmp_path, monkeypatch):
++    _setup(tmp_path, monkeypatch)
++    out = svc.restore_anchor("688825.SH", "2026-11-12", "11-12 导入对账单后锚点漂移, 按快照恢复", **KW)
++    st = svc.load_state()
++    ps = st["positions"]["688825.SH"]
++    assert ps["anchor_lock"]["date"] == "2026-11-02" and ps["anchor_lock"]["restored_from"] == "2026-11-12"
++    assert ps["published"]["anchor"] == "2026-11-02" and ps["published"]["date"] == "2026-11-12"
++    assert ps["published"]["ratio"] == pytest.approx(26.04 / 40.97, abs=1e-12)
++    assert st["audit"][-1]["action"] == "anchor_restore" and "26.04" in st["audit"][-1]["detail"]
++    row = {r["ts_code"]: r for r in svc.build_report(**KW)["positions"]}["688825.SH"]
++    assert row["anchor_date"] == "2026-11-02" and row["stop"] == 26.04 and row["status"] == "GREEN"
++    assert out["restored_stop"] == 26.04
++    # 恢复后不再提议; 再次 POST 拒绝
++    assert not [p for p in svc.restore_preview(**KW)["proposals"] if p["ts_code"] == "688825.SH"]
++    with pytest.raises(ValueError):
++        svc.restore_anchor("688825.SH", "2026-11-12", "重复恢复测试理由", **KW)
++
++
++@pytest.mark.parametrize("code,date,reason", [
++    ("002156.SZ", "2026-11-12", "不在提议名单的代码"),
++    ("688825.SH", "2026-11-11", "快照日与提议不同"),
++    ("688825.SH", "2026-11-12", ""),
++    ("688825.SH", "2026-11-12", "短"),
++])
++def test_post_rejects_anything_not_in_preview(tmp_path, monkeypatch, code, date, reason):
++    _setup(tmp_path, monkeypatch)
++    before = open(svc.STATE_PATH, encoding="utf-8").read()
++    with pytest.raises(ValueError):
++        svc.restore_anchor(code, date, reason, **KW)
++    assert open(svc.STATE_PATH, encoding="utf-8").read() == before
++
++
++def test_api_preview_get_is_readonly_and_post_requires_authority(tmp_path, monkeypatch):
++    _setup(tmp_path, monkeypatch)
++    from fastapi import FastAPI
++    from fastapi.testclient import TestClient
++    from routers import trailing
++    calls = []
++    monkeypatch.setattr(svc, "restore_preview", lambda **k: {"positions": [], "proposals": [], "as_of": "2026-11-13"})
++    monkeypatch.setattr(svc, "restore_anchor", lambda *a, **k: calls.append(a) or {"restored_stop": 26.04})
++    app = FastAPI()
++    app.include_router(trailing.router)
++    c = TestClient(app)
++    before = open(svc.STATE_PATH, encoding="utf-8").read()
++    r = c.get("/api/v1/portfolio/trailing-stops/restore-preview")
++    assert r.status_code == 200 and r.json()["status"] == "success"
++    assert open(svc.STATE_PATH, encoding="utf-8").read() == before
++    body = {"ts_code": "688825.SH", "snapshot_date": "2026-11-12", "reason": "11-12 导入后锚点漂移, 按快照恢复"}
++    r = c.post("/api/v1/portfolio/trailing-stops/restore-anchor", json=body)
++    assert r.json()["status"] == "success" and calls == [("688825.SH", "2026-11-12", body["reason"])]
++    monkeypatch.setenv("ACCOUNT_AUTHORITY", "local")
++    r = c.post("/api/v1/portfolio/trailing-stops/restore-anchor", json=body)
++    assert r.status_code == 403 and len(calls) == 1
+-- 
+2.43.0
+

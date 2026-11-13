@@ -1,0 +1,184 @@
+From bbfc357c5c9e7cfb86eb4267d1b45aa64375893d Mon Sep 17 00:00:00 2001
+From: terryzhoo-max <terryzhoo@gmail.com>
+Date: Fri, 13 Nov 2026 07:58:44 -0600
+Subject: [PATCH 3/4] =?UTF-8?q?=E8=B7=9F=E8=B8=AA=E6=AD=A2=E7=9B=88=20T1?=
+ =?UTF-8?q?=20=E7=95=8C=E9=9D=A2:=20=E5=BB=BA=E4=BB=93=E9=94=9A=E7=82=B9"?=
+ =?UTF-8?q?=E5=B7=B2=E9=94=81=E5=AE=9A"=E6=A0=87=E6=B3=A8,=20=E5=8F=B0?=
+ =?UTF-8?q?=E8=B4=A6=E5=BB=BA=E4=BB=93=E6=97=A5=E5=B7=AE=E5=BC=82=E6=8F=90?=
+ =?UTF-8?q?=E7=A4=BA,=20=E8=AE=BE=E4=B8=BA=E5=BA=95=E4=BB=93=E8=AF=B4?=
+ =?UTF-8?q?=E6=98=8E=E4=B8=8D=E6=94=BE=E5=AE=BD=E6=AD=A2=E6=8D=9F=E7=BA=BF?=
+ =?UTF-8?q?=20(panel=20v18)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVe56CLRS9UTURErLEp
+---
+ quant_dashboard/decision.html                 |  2 +-
+ .../static/js/decision/trailing_stop_panel.js |  6 +-
+ .../tests/test_batch1_c5_panel_risk_state.cjs |  2 +-
+ .../tests/test_decision_macro_bg_line.cjs     |  3 +-
+ .../tests/test_export_coverage_frontend.cjs   |  2 +-
+ .../tests/test_trailing_anchor_lock_panel.cjs | 58 +++++++++++++++++++
+ 6 files changed, 67 insertions(+), 6 deletions(-)
+ create mode 100644 quant_dashboard/tests/test_trailing_anchor_lock_panel.cjs
+
+diff --git a/quant_dashboard/decision.html b/quant_dashboard/decision.html
+index 16db783..d318752 100644
+--- a/quant_dashboard/decision.html
++++ b/quant_dashboard/decision.html
+@@ -961,7 +961,7 @@
+     <script src="./static/js/decision/rebalance_panel.js?v=54"></script>
+     <script src="./static/js/decision/brinson.js?v=1"></script>
+     <script src="./static/js/decision/vol_budget_panel.js?v=9"></script>
+-    <script src="./static/js/decision/trailing_stop_panel.js?v=17"></script>
++    <script src="./static/js/decision/trailing_stop_panel.js?v=18"></script>
+     <script src="./static/js/decision.js?v=64"></script>
+     <script>
+     if ('serviceWorker' in navigator) {
+diff --git a/quant_dashboard/static/js/decision/trailing_stop_panel.js b/quant_dashboard/static/js/decision/trailing_stop_panel.js
+index 39e26a7..161ea5b 100644
+--- a/quant_dashboard/static/js/decision/trailing_stop_panel.js
++++ b/quant_dashboard/static/js/decision/trailing_stop_panel.js
+@@ -35,6 +35,7 @@
+     const ANCHOR = {
+         exact: '台账精确', pre_window: '早于台账', approx: '近似', rebaselined: '已重设',
+         unknown: '快照日', no_history: '无台账', inferred_cost: '成本反推', manual: '人工设定',
++        locked: '已锁定',
+     };
+     const CLS = { stock: '个股', theme_etf: '主题', broad_etf: '宽基' };
+     const TABS = [
+@@ -537,7 +538,7 @@
+         }
+         if (r.status !== 'NO_DATA') {
+             ops += `<button class="ts-mini ghost" data-act="sleeve" data-code="${esc(r.ts_code)}" data-to="${r.sleeve === 'core' ? 'satellite' : 'core'}"
+-                title="底仓: 5/6×ATR 宽止损, 不分批">${r.sleeve === 'core' ? '设为卫星' : '设为底仓'}</button>`;
++                title="底仓: 5/6×ATR 宽止损, 不分批 (只影响之后的计算, 不放宽已发布的止损线; 放宽需重新基准化或人工设定建仓日)">${r.sleeve === 'core' ? '设为卫星' : '设为底仓'}</button>`;
+         }
+         return ops;
+     }
+@@ -551,6 +552,7 @@
+         }
+         if (r.risk_excess_qty) sub.push(`<i class="ts-warn">超单票风险预算 · 应减 ${r.risk_excess_qty.toLocaleString()} 股</i>`);
+         if ((r.data_lag_days || 0) > 1) sub.push(`<i class="ts-warn">行情滞后 ${r.data_lag_days} 日</i>`);
++        if (r.anchor_hint) sub.push(`<i class="ts-warn">${esc(r.anchor_hint)}</i>`);   // 2026-11-13 T1 F1b: 只提示, 不自动改
+         const gainCls = signCls(r.gain_pct);
+         const dAtr = num(r.distance_atr);
+         return `
+@@ -567,7 +569,7 @@
+             <td data-label="到止损风险" class="ts-num">${r.open_risk == null ? '—' : money(r.open_risk)}
+                 <span>${r.risk_pct == null ? (r.status === 'LEGACY' || r.status === 'RED' ? '已越线' : '') : pct(r.risk_pct, 2) + ' 总资产'}</span></td>
+             <td data-label="建仓锚点" class="ts-num">${esc(r.anchor_date || '--')}
+-                <span title="${esc(r.anchor_note || '')}">${ANCHOR[r.anchor_quality] || esc(r.anchor_quality || '')}</span></td>
++                <span title="${esc(r.anchor_note || '')}">${ANCHOR[r.anchor_quality] || esc(r.anchor_quality || '')}${r.anchor_locked && r.anchor_quality !== 'locked' ? ' · <i class="ts-lock">已锁定</i>' : ''}</span></td>
+             <td data-label="" class="ts-ops">${rowOps(r)}</td>
+         </tr>
+         ${sub.length ? `<tr class="ts-subrow ${st.cls}"><td colspan="8">${sub.join(' · ')}</td></tr>` : ''}`;
+diff --git a/quant_dashboard/tests/test_batch1_c5_panel_risk_state.cjs b/quant_dashboard/tests/test_batch1_c5_panel_risk_state.cjs
+index fa33197..d9aa6f2 100644
+--- a/quant_dashboard/tests/test_batch1_c5_panel_risk_state.cjs
++++ b/quant_dashboard/tests/test_batch1_c5_panel_risk_state.cjs
+@@ -145,7 +145,7 @@ const between = (src, a, b) => { const i = src.indexOf(a); assert(i >= 0, `缺
+ 
+     // 7) 版本号
+     const dh = read('decision.html');
+-    for (const [re, v] of [[/trailing_stop_panel\.js\?v=(\d+)/, 17], [/trailing_stop\.css\?v=(\d+)/, 14],
++    for (const [re, v] of [[/trailing_stop_panel\.js\?v=(\d+)/, 18], [/trailing_stop\.css\?v=(\d+)/, 14],
+                            [/vol_budget_panel\.js\?v=(\d+)/, 9], [/vol_budget\.css\?v=(\d+)/, 5]]) {
+         assert.equal(Number((dh.match(re) || [])[1]), v, `decision.html ${re}`);
+     }
+diff --git a/quant_dashboard/tests/test_decision_macro_bg_line.cjs b/quant_dashboard/tests/test_decision_macro_bg_line.cjs
+index 0074c72..3bb7d91 100644
+--- a/quant_dashboard/tests/test_decision_macro_bg_line.cjs
++++ b/quant_dashboard/tests/test_decision_macro_bg_line.cjs
+@@ -155,7 +155,8 @@ async function runInit(bgOn) {
+     assert.equal(sha(fnBody(dj, 'renderComplianceBadge')), 'e07f4ef58f545891');
+     assert.equal(sha(fnBody(read('static/js/decision/global_analytics.js'), 'renderComplianceEngine')), 'da01258e265c3af4');
+     // 2026-11-11 批次1 C5: 跟踪止盈面板回撤读数改按风险状态 (有意改动, 锁更新为改后的内容)
+-    assert.equal(sha(read('static/js/decision/trailing_stop_panel.js')), '4cccdac51eb46c21');
++    // 2026-11-13 跟踪止盈 T1: 建仓锚点"已锁定"标注 / 台账建仓日差异提示 / 设为底仓说明 (有意改动, 锁更新为改后的内容)
++    assert.equal(sha(read('static/js/decision/trailing_stop_panel.js')), '3fbe7c3b877ff6e1');
+ 
+     // ── 6) 宏观背景页: 市场动态 (同一来源 /decision/hub, 同一渲染函数) ──
+     assert(/id="mc-events-title">市场动态/.test(macroHtml) && macroHtml.includes('id="events-strip"') && macroHtml.includes('id="events-cards"'));
+diff --git a/quant_dashboard/tests/test_export_coverage_frontend.cjs b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+index 4180853..bdcbdf1 100644
+--- a/quant_dashboard/tests/test_export_coverage_frontend.cjs
++++ b/quant_dashboard/tests/test_export_coverage_frontend.cjs
+@@ -61,7 +61,7 @@ assert.equal(m.sub, '10-30 收盘 → 11-04 收盘');
+ // 4) 版本
+ // 2026-11-05 决策中枢视觉 2 改动 trailing_stop_panel.js / trailing_stop.css (回撤刹车说明性写法), 版本号 15 → 16、12 → 13
+ // 2026-11-11 批次1 C5 改动 trailing_stop_panel.js / trailing_stop.css (回撤读数按风险状态), 版本号 16 → 17、13 → 14
+-assert.match(read('decision.html'), /trailing_stop_panel\.js\?v=17"/);
++assert.match(read('decision.html'), /trailing_stop_panel\.js\?v=18"/);
+ assert.match(read('decision.html'), /trailing_stop\.css\?v=14"/);
+ // 2026-11-04 组合页视觉轮 V2 改动 portfolio_kpis.js (收益涨跌色 / 回撤档位标签 / 执行目标行), 版本号 3 → 4; V3 (风险贡献并排条) 4 → 5
+ // 2026-11-11 批次1 C5 (回撤近似标签) 5 → 6
+diff --git a/quant_dashboard/tests/test_trailing_anchor_lock_panel.cjs b/quant_dashboard/tests/test_trailing_anchor_lock_panel.cjs
+new file mode 100644
+index 0000000..4dc05c7
+--- /dev/null
++++ b/quant_dashboard/tests/test_trailing_anchor_lock_panel.cjs
+@@ -0,0 +1,58 @@
++// 2026-11-13 跟踪止盈锚点锁定 T1 界面 (docs/TRAILING_ANCHOR_FIX_PLAN.md F1 / F1b) — node tests/test_trailing_anchor_lock_panel.cjs
++// ① 已锁定的锚点在"建仓锚点"列标"已锁定", 悬停说明锁定规则; ② 台账建仓日与锁定锚点不同 → 行下提示 (只提示, 不自动改);
++// ③ "设为底仓"按钮说明不放宽已发布止损线; ④ 版本号。
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++const assert = require('node:assert/strict');
++const root = path.join(__dirname, '..');
++const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
++const tsJs = read('static/js/decision/trailing_stop_panel.js');
++
++const POS = (o) => ({ ts_code: '688825.SH', name: '长鑫科技', status: 'GREEN', asset_class: 'stock', sleeve: 'satellite',
++    weight: 0.03, close: 39.98, cost: 41.441, gain_pct: -0.035, stop: 26.04, distance_atr: 4.8, distance_pct: 0.35,
++    stage: 0, stage_label: 'S0 初始止损', params: { init_k: 5, trail_k: 4, trail_start_r: 1 }, open_risk: 12000, risk_pct: 0.008,
++    anchor_date: '2026-11-02', anchor_quality: 'exact', anchor_note: '台账可见 0→持仓 的建仓日', path: { d: [], c: [], s: [] }, ...o });
++
++function fixture(positions) {
++    return { as_of: '2026-11-13', summary: { GREEN: positions.length }, equity: 1409000,
++        heat: { breached_pct: 0, heat_pct: 0.05, limit_pct: 0.12, breached_market_value: 0 },
++        correlation: { n_eff: 2.1, n: 13, avg_corr: 0.61 }, discipline: { score: null }, averaging_down: { count: 0 },
++        actions: [], positions, meta: { config_hash: 'abc' }, eod: { last_as_of: '2026-11-13' }, params: {}, changes: {},
++        drawdown: { status: 'insufficient' } };
++}
++
++async function render(data) {
++    const nodes = {};
++    const mk = (id) => ({ id, innerHTML: '', textContent: '', hidden: false, dataset: {}, clientWidth: 0,
++        classList: { add() {}, remove() {}, toggle() {}, contains: () => false }, addEventListener() {}, querySelectorAll: () => [] });
++    const node = (id) => (nodes[id] = nodes[id] || mk(id));
++    const doc = { getElementById: (id) => (['trailing-stop-panel', 'ts-body', 'ts-summary', 'ts-dd-chartbox', 'ts-msg'].includes(id) ? node(id) : null),
++        addEventListener() {}, querySelectorAll: () => [] };
++    const resp = { json: async () => ({ status: 'success', data }) };
++    const ctx = { document: doc, console: { warn() {}, log() {}, info() {} }, setTimeout: () => 0, clearTimeout() {}, Math, Number, String, Array,
++        Object, JSON, Date, Promise, isNaN, localStorage: { getItem: () => null, setItem() {} }, fetch: async () => resp,
++        CustomEvent: class { constructor(t, o) { this.type = t; this.detail = o && o.detail; } } };
++    ctx.window = ctx; ctx.addEventListener = () => {}; ctx.dispatchEvent = () => {};
++    vm.createContext(ctx);
++    vm.runInContext(tsJs, ctx);
++    await ctx.loadTrailingStopPanel(false);
++    return nodes['ts-body'].innerHTML;
++}
++
++(async () => {
++    const locked = POS({ anchor_locked: true, anchor_quality: 'inferred_cost', anchor_date: '2026-08-26',
++        anchor_note: '成交记录早于台账 · 首次发布后已锁定: 加仓 / 导入成交 / 对账变化不再改变锚点',
++        anchor_hint: '台账建仓日 2026-09-10 与锁定锚点 2026-08-26 不同; 如需改用台账日期, 请人工设定建仓日 (止损线将按新锚点重算)' });
++    const plain = POS({ ts_code: '002156.SZ', name: '通富微电' });
++    const body = await render(fixture([locked, plain]));
++    const rowOf = (code) => { const i = body.indexOf(`id="ts-row-${code}"`); assert(i >= 0, `缺少行 ${code}`); return body.slice(i, body.indexOf('</tr>', i)); };
++    const r1 = rowOf('688825.SH');
++    assert(r1.includes('成本反推') && r1.includes('ts-lock') && r1.includes('已锁定'), `锁定标注: ${r1}`);
++    assert(r1.includes('首次发布后已锁定'), '悬停说明');
++    assert(!rowOf('002156.SZ').includes('已锁定'), '未锁定的不标');
++    assert(body.includes('台账建仓日 2026-09-10 与锁定锚点 2026-08-26 不同'), '台账建仓日差异提示');
++    assert(/data-act="sleeve"[^>]*title="[^"]*不放宽已发布的止损线/.test(body), '设为底仓按钮说明不放宽止损线');
++    assert.match(read('decision.html'), /trailing_stop_panel\.js\?v=18"/);
++    console.log('test_trailing_anchor_lock_panel: ok');
++})().catch((e) => { console.error(e); process.exit(1); });
+-- 
+2.43.0
+
