@@ -9,3 +9,9 @@
 [2026-11-12 09:07:24] quant_dashboard: Committing: docs: 跟踪止盈锚点漂移修复方案; 包B顺序与补丁位置; 提交4-6部署核对/影子记录首次核对/止损线排查记录
 [2026-11-12 09:07:24] quant_dashboard: PUSHED at 3c24641
 [2026-11-12 09:07:24] --- Processing: NEWS ---
+[2026-11-12 09:07:24] NEWS: Committing: docs: 跟踪止盈锚点漂移修复方案; 包B顺序与补丁位置; 提交4-6部署核对/影子记录首次核对/止损线排查记录
+[2026-11-12 09:07:24] NEWS: PUSHED at 972b9fa
+[2026-11-12 09:07:24] quant_dashboard: PUSHED
+[2026-11-12 09:07:24] NEWS: PUSHED
+[2026-11-12 09:07:24] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-12 09:07:24] ===== AlphaCore Push v4.1 finished =====
