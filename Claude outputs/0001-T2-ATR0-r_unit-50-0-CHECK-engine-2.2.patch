@@ -1,0 +1,318 @@
+From 9de45cf6c36d0de8ce79a5ac93103a3345ab2bb9 Mon Sep 17 00:00:00 2001
+From: terryzhoo-max <terryzhoo@gmail.com>
+Date: Fri, 13 Nov 2026 08:09:28 -0600
+Subject: [PATCH 1/2] =?UTF-8?q?=E8=B7=9F=E8=B8=AA=E6=AD=A2=E7=9B=88=20T2:?=
+ =?UTF-8?q?=20=E6=AD=A2=E6=8D=9F=E7=BA=BF=E5=90=88=E7=90=86=E6=80=A7?=
+ =?UTF-8?q?=E4=B8=8B=E9=99=90=20(=E6=96=B0=E8=82=A1ATR0=E5=89=94=E9=99=A4?=
+ =?UTF-8?q?=E4=B8=8A=E5=B8=82=E9=A6=96=E6=97=A5=E5=B9=B6=E4=B8=8E=E5=8E=9F?=
+ =?UTF-8?q?=E7=AE=97=E6=B3=95=E5=8F=96=E5=B0=8F;=20r=5Funit=2050%=E5=B0=81?=
+ =?UTF-8?q?=E9=A1=B6=E5=B9=B6=E6=A0=87=E6=B3=A8;=20=E6=AD=A2=E6=8D=9F/?=
+ =?UTF-8?q?=E5=85=9C=E5=BA=95=E2=89=A40=20=E2=86=92=20CHECK=E9=9C=80?=
+ =?UTF-8?q?=E6=A0=B8=E5=AF=B9,=20=E4=B8=8D=E5=8F=91=E5=B8=83/=E4=B8=8D?=
+ =?UTF-8?q?=E7=94=9F=E6=88=90=E6=9D=A1=E4=BB=B6=E5=8D=95/=E8=BF=9B?=
+ =?UTF-8?q?=E6=91=98=E8=A6=81=E4=B8=8E=E6=8E=A8=E9=80=81);=20engine=202.2?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UWFxVe56CLRS9UTURErLEp
+---
+ quant_dashboard/services/trailing_stop.py     |  42 +++++-
+ .../services/trailing_stop_service.py         |  15 ++-
+ .../tests/test_trailing_restore_anchor.py     |   2 +-
+ .../tests/test_trailing_stop_sanity.py        | 123 ++++++++++++++++++
+ 4 files changed, 173 insertions(+), 9 deletions(-)
+ create mode 100644 quant_dashboard/tests/test_trailing_stop_sanity.py
+
+diff --git a/quant_dashboard/services/trailing_stop.py b/quant_dashboard/services/trailing_stop.py
+index d98c6e1..caa11a8 100644
+--- a/quant_dashboard/services/trailing_stop.py
++++ b/quant_dashboard/services/trailing_stop.py
+@@ -25,7 +25,8 @@ AlphaCore · 持仓跟踪止盈引擎 (纯计算, 无 I/O)
+ 确定性重放: 每天从锚点日按日线重放; 已发布的止损线以 "止损/收盘" 比值存为下限, 复权变化不致下移。
+           下限自发布当日起生效 (含同日重算, 2026-11-13); 锚点首次发布后锁定, 见 trailing_stop_service.resolve_anchor。
+ 
+-状态: RED 已触发未执行 · LEGACY 跟踪前已越线 (需一次性决策) · ACTION 分批止盈待执行 ·
++状态: RED 已触发未执行 · LEGACY 跟踪前已越线 (需一次性决策) · CHECK 止损线 / 兜底价 ≤ 0 需核对 (不发布、不生成条件单) ·
++      ACTION 分批止盈待执行 ·
+       YELLOW 距止损 < 0.5 ATR · GREEN 持有 · NO_DATA 行情不足
+ """
+ from __future__ import annotations
+@@ -66,6 +67,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
+     "aiae_tighten_step": 0.0,
+     "near_stop_atr": 0.5,
+     "min_r_pct": 0.03,                 # R 下限 (成本的 3%)
++    # 2026-11-13 T2 合理性下限 (docs/TRAILING_ANCHOR_FIX_PLAN.md F2): R 上限 = 成本的 50% (只拦建仓初期波动异常,
++    # 正常个股约 30–41%); 超过即封顶并标注 stop_sanity=capped
++    "max_r_pct": 0.5,
+     "disaster_stop_atr": 1.0,          # 券商条件单兜底价 = 收盘确认线 − 1 ATR (防跳空/盘中崩)
+     "lot_size": 100,
+     "round_trip_cost": 0.002,
+@@ -77,7 +81,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
+     "broad_etf_exclude": ["科创", "创业板50", "半导体", "芯片", "恒生科技"],
+ }
+ 
+-STATUS_ORDER = {"RED": 0, "LEGACY": 1, "ACTION": 2, "YELLOW": 3, "GREEN": 4, "NO_DATA": 5}
++STATUS_ORDER = {"RED": 0, "LEGACY": 1, "CHECK": 2, "ACTION": 3, "YELLOW": 4, "GREEN": 5, "NO_DATA": 6}
+ STAGE_LABEL = {0: "S0 初始止损", 1: "S1 保本", 2: "S2 跟踪止盈"}
+ 
+ 
+@@ -262,11 +266,34 @@ def evaluate_position(pos: PositionInput, bars: pd.DataFrame, *, regime: str = "
+         sub = b.tail(1)
+         anchor = sub.index[0]
+     prior = atr[atr.index <= anchor].dropna()
+-    atr0 = float(prior.iloc[-1]) if len(prior) else float(atr.dropna().iloc[0])
++    sanity, sanity_note = None, None
++    if len(prior):
++        atr0 = float(prior.iloc[-1])
++    else:
++        # 2026-11-13 T2 ①: 锚点之前没有有效 ATR (新股前 atr_period 根内)。原算法取首个有效 ATR, 而 ewm(adjust=False)
++        # 以首根 K 线的真实波幅为起点, 上市首日的巨幅波动会主导它。改为剔除上市首日、取第 2 至第 period+1 根真实波幅均值,
++        # 并与原算法取较小者 (只会让止损线上移, 第 5 节 D3)。
++        atr0 = float(atr.dropna().iloc[0])
++        prev_c = b["close"].shift(1)
++        if not approx_atr:
++            tr = pd.concat([b["high"] - b["low"], (b["high"] - prev_c).abs(), (b["low"] - prev_c).abs()], axis=1).max(axis=1)
++        else:
++            tr = (b["close"] - prev_c).abs() * 1.25
++        alt = tr.iloc[1:period + 1].dropna()
++        if len(alt) == period and float(alt.mean()) < atr0:
++            atr0 = float(alt.mean())
++            sanity = "atr0_listing"
++            sanity_note = "建仓 ATR 剔除上市首日 (锚点早于首个有效 ATR)"
+ 
+     cp = class_params(cls, pos.sleeve, cfg)
+     basis = float(pos.basis_price or pos.cost)
+     r_unit = max(float(cp["init_atr_mult"]) * atr0, float(cfg["min_r_pct"]) * basis)
++    max_r = float(cfg.get("max_r_pct") or 0) * basis
++    if max_r > 0 and r_unit > max_r:
++        # 2026-11-13 T2 ②: 一倍风险超过成本 50% 等于没有止损; 封顶并在行内标注
++        r_unit = max_r
++        sanity = "capped"
++        sanity_note = f"止损幅度已按 {float(cfg['max_r_pct']):.0%} 封顶（建仓初期波动异常）"
+     init_stop = basis - r_unit
+     breakeven = basis * (1 + float(cfg["breakeven_buffer_pct"]))
+     trail_r, be_r = float(cp["trail_start_r"]), float(cfg["breakeven_r"])
+@@ -378,6 +405,8 @@ def evaluate_position(pos: PositionInput, bars: pd.DataFrame, *, regime: str = "
+         "pending_partial": pending[0] if pending else None,
+         "sell_qty": 0,
+         "path": _path(b.tail(path_days), stop_path, tick),
++        "stop_sanity": sanity,
++        "stop_note": sanity_note,
+     }
+ 
+     tracking = pd.Timestamp(pos.tracking_since) if pos.tracking_since else None
+@@ -393,6 +422,13 @@ def evaluate_position(pos: PositionInput, bars: pd.DataFrame, *, regime: str = "
+             out["sell_qty"] = pos.qty
+             late = f", 已逾期 {days} 个交易日" if days > 0 else ""
+             out["action"] = f"收盘跌破止损线 {out['breach_stop']} → 下一交易日卖出 {pos.qty} 股{late}"
++    elif out["stop"] <= 0 or out["disaster_stop"] <= 0:
++        # 2026-11-13 T2 ③: 止损线 / 兜底价 ≤ 0 等于没有止损 → 显式暴露, 不当作 GREEN; 不生成条件单, 日终不发布
++        out["status"] = "CHECK"
++        out["stop_sanity"] = "check"
++        out["stop_note"] = (out.get("stop_note") + " · " if out.get("stop_note") else "") + "止损线 / 兜底价 ≤ 0"
++        out["action"] = (f"止损线需核对: 止损线 {stop_r} / 兜底价 {out['disaster_stop']} ≤ 0 (建仓 ATR {round(atr0, 4)}, "
++                         f"R {round(r_unit, 4)}), 未发布、不生成条件单; 请核对建仓日或重新基准化")
+     elif pending:
+         p = pending[0]
+         out["status"] = "ACTION"
+diff --git a/quant_dashboard/services/trailing_stop_service.py b/quant_dashboard/services/trailing_stop_service.py
+index 098af7a..95019ae 100644
+--- a/quant_dashboard/services/trailing_stop_service.py
++++ b/quant_dashboard/services/trailing_stop_service.py
+@@ -48,7 +48,7 @@ SNAPSHOT_DIR = os.path.join(DATA_DIR, "trailing_snapshots")
+ # 2026-11-02 导入后风险状态重算: 合规 / 执行层所用的最新风险状态 (无 Redis 时重启不丢)
+ LIVE_RISK_PATH = os.path.join(DATA_DIR, "risk_state_live.json")
+ SCHEMA_VERSION = 2
+-ENGINE_VERSION = "trailing-stop/2.1 (calibrated 2026-10-22)"
++ENGINE_VERSION = "trailing-stop/2.2 (calibrated 2026-10-22; sanity floor 2026-11-13)"
+ CONFIG_PATH = os.path.join(_ROOT, "config", "trailing_stop.json")
+ PRICE_DIR = os.path.join(DATA_DIR, "daily_prices")
+ 
+@@ -424,7 +424,7 @@ def build_report(*, store: Optional[Mapping[str, Any]] = None, ledger: Optional[
+ 
+     orders = []
+     for r in rows:
+-        if r.get("status") in ("NO_DATA", "LEGACY"):
++        if r.get("status") in ("NO_DATA", "LEGACY", "CHECK"):     # CHECK: 止损线 ≤ 0, 不生成条件单 (2026-11-13 T2)
+             continue
+         if r["status"] == "RED":
+             orders.append({"ts_code": r["ts_code"], "name": r["name"], "type": "次日开盘卖出",
+@@ -568,8 +568,8 @@ def commit_eod(report: Mapping[str, Any], *, regime: str, today: str) -> None:
+             rl.pop(k, None)
+         now = datetime.now().isoformat(timespec="seconds")
+         for r in rows:
+-            if r.get("status") == "NO_DATA" or not r.get("close") or r.get("stop") is None:
+-                continue
++            if r.get("status") in ("NO_DATA", "CHECK") or not r.get("close") or r.get("stop") is None:
++                continue            # 2026-11-13 T2: CHECK (止损线 ≤ 0) 不发布
+             fp = fresh["positions"].setdefault(r["ts_code"], {})
+             ratio = round(float(r["stop"]) / float(r["close"]), 6)
+             old = fp.get("published") or {}
+@@ -806,6 +806,11 @@ def build_actions(report: Mapping[str, Any]) -> list[dict]:
+                                     f"若保留: 新止损 {ru.get('new_stop')} (−{(ru.get('stop_distance_pct') or 0):.0%}), "
+                                     f"风险预算内最多 {ru.get('max_qty')} 股"
+                                     + (f", 需减 {ru.get('reduce_qty')} 股" if ru.get("reduce_qty") else ""))})
++    for r in rows:
++        if r.get("status") == "CHECK":         # 2026-11-13 T2: 止损线 ≤ 0 → 需核对 (不生成条件单)
++            acts.append({"priority": 2, "type": "CHECK", "ts_code": r["ts_code"], "name": r["name"], "qty": r.get("qty"),
++                         "value": r.get("market_value") or 0, "title": f"核对 {r['name']} 止损线 (≤ 0)",
++                         "detail": r.get("action") or "止损线 / 兜底价 ≤ 0, 未发布、不生成条件单; 请核对建仓日或重新基准化"})
+     acts.extend(_drawdown_actions(report.get("drawdown") or {}))
+     for r in rows:
+         if r.get("status") == "ACTION" and r.get("pending_partial"):
+@@ -1319,7 +1324,7 @@ def build_review(*, ledger: Optional[Mapping[str, Any]] = None, store: Optional[
+ # ═══════════════════════════════════════════════════════
+ 
+ _SEVERITY = {"RED": ("critical", "🛑"), "ACTION": ("warning", "💰"), "YELLOW": ("info", "⚠️"),
+-             "LEGACY": ("warning", "📌")}
++             "LEGACY": ("warning", "📌"), "CHECK": ("warning", "🔍")}
+ 
+ 
+ def scan_and_alert(report: Optional[dict] = None, *, push: bool = True) -> list[dict]:
+diff --git a/quant_dashboard/tests/test_trailing_restore_anchor.py b/quant_dashboard/tests/test_trailing_restore_anchor.py
+index ad1b6fe..2757dd0 100644
+--- a/quant_dashboard/tests/test_trailing_restore_anchor.py
++++ b/quant_dashboard/tests/test_trailing_restore_anchor.py
+@@ -81,7 +81,7 @@ def test_preview_lists_pre_drift_values_and_proposes_only_two(tmp_path, monkeypa
+     assert open(svc.STATE_PATH, encoding="utf-8").read() == before            # 只读
+     by = {x["ts_code"]: x for x in pv["positions"]}
+     cx = by["688825.SH"]
+-    assert cx["current_anchor"] == "2026-07-27" and cx["current_stop"] < 0
++    assert cx["current_anchor"] == "2026-07-27" and cx["current_stop"] < 26.04     # T2 前为负; T2 封顶后为正但仍低于恢复值
+     assert cx["before_change"]["snapshot_date"] == "2026-11-12" and cx["before_change"]["anchor"] == "2026-11-02"
+     assert cx["before_change"]["ratio"] == pytest.approx(26.04 / 40.97, abs=1e-12)
+     assert cx["proposed"] is True and cx["restored_stop"] == 26.04 and cx["would_trigger"] is False
+diff --git a/quant_dashboard/tests/test_trailing_stop_sanity.py b/quant_dashboard/tests/test_trailing_stop_sanity.py
+new file mode 100644
+index 0000000..a165a3a
+--- /dev/null
++++ b/quant_dashboard/tests/test_trailing_stop_sanity.py
+@@ -0,0 +1,123 @@
++"""跟踪止盈 止损线合理性下限 (2026-11-13 T2, docs/TRAILING_ANCHOR_FIX_PLAN.md F2 / 第 5 节 D1 / D3 / D6)
++
++① 锚点之前没有有效 ATR (新股前 atr_period 根内): ATR0 = min(原算法首个有效 ATR, 第 2 至第 atr_period+1 根真实波幅均值)
++   —— 剔除上市首日, 且只会让止损线上移;
++② r_unit 超过成本 50% → 按 50% 封顶并标注 stop_sanity=capped;
++③ 止损线 / 兜底价 ≤ 0 → 状态 CHECK (止损线需核对): 排在 LEGACY 之后, 不生成条件单, 日终不发布, 进入每日摘要与推送;
++正常持仓逐值不变。
++"""
++import os
++import sys
++
++import numpy as np
++import pandas as pd
++import pytest
++
++sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++
++from services import trailing_stop_service as svc  # noqa: E402
++from services.trailing_stop import (  # noqa: E402
++    DEFAULT_CONFIG, STATUS_ORDER, PositionInput, evaluate_position, normalize_bars, wilder_atr,
++)
++
++
++def _ohlc(rows, start="2026-07-27"):
++    idx = pd.bdate_range(start, periods=len(rows))
++    o, h, lo, c = (np.array([r[i] for r in rows], dtype=float) for i in range(4))
++    return pd.DataFrame({"trade_date": idx.strftime("%Y%m%d"), "open": o, "high": h, "low": lo, "close": c})
++
++
++def _listing(first_tr=16.92, later_tr=4.0, n=74, base=45.0):
++    """上市首日波幅极大, 之后正常: 模拟长鑫 688825 (首日 55.03 / 38.11)。"""
++    rows = [(49.0, 49.0 + first_tr / 2, 49.0 - first_tr / 2, 49.0)]
++    for i in range(1, n):
++        c = base + 2 * np.sin(i / 5)
++        rows.append((c, c + later_tr / 2, c - later_tr / 2, c))
++    return _ohlc(rows)
++
++
++def _pos(cost, anchor, code="688825.SH", **k):
++    return PositionInput(ts_code=code, name="长鑫科技", qty=903, cost=cost, anchor_date=anchor,
++                         anchor_quality="inferred_cost", tracking_since="2026-10-23", **k)
++
++
++def _tr_mean_ex_first(bars, period=20):
++    b = normalize_bars(bars)
++    prev = b["close"].shift(1)
++    tr = pd.concat([b["high"] - b["low"], (b["high"] - prev).abs(), (b["low"] - prev).abs()], axis=1).max(axis=1)
++    return float(tr.iloc[1:period + 1].mean())
++
++
++def test_listing_day_anchor_excludes_first_day_true_range():
++    bars = _listing()
++    old_atr0 = float(wilder_atr(normalize_bars(bars), 20).dropna().iloc[0])
++    new_atr0 = _tr_mean_ex_first(bars)
++    assert new_atr0 < old_atr0
++    r = evaluate_position(_pos(41.441, "2026-07-27"), bars, cfg=DEFAULT_CONFIG)
++    assert r["r_unit"] == pytest.approx(5 * new_atr0, abs=1e-3)
++    assert r["stop"] > 0 and r["stop_sanity"] == "atr0_listing"
++
++
++def test_listing_rule_takes_smaller_so_stop_never_lower():
++    # 首日波幅很小、之后很大: 剔除首日的均值反而更大 → 取原算法 (止损线不比改前低)
++    bars = _listing(first_tr=0.2, later_tr=3.0)
++    old_atr0 = float(wilder_atr(normalize_bars(bars), 20).dropna().iloc[0])
++    assert _tr_mean_ex_first(bars) > old_atr0
++    r = evaluate_position(_pos(45.0, "2026-07-27"), bars, cfg=DEFAULT_CONFIG)
++    assert r["r_unit"] == pytest.approx(max(5 * old_atr0, 0.03 * 45.0), abs=1e-3)
++    assert r.get("stop_sanity") in (None, "")
++
++
++def test_r_unit_capped_at_half_of_cost_and_flagged():
++    rows = [(200.0, 220.0, 180.0, 200.0)] * 60          # ATR ≈ 20 → 5×ATR = 100 > 50% × 190
++    bars = _ohlc(rows, start="2026-08-03")
++    r = evaluate_position(_pos(190.0, "2026-09-15", code="002916.SZ"), bars, cfg=DEFAULT_CONFIG)
++    assert r["r_unit"] == pytest.approx(95.0, abs=1e-6)
++    assert r["stop"] == pytest.approx(95.0, abs=0.01)
++    assert r["stop_sanity"] == "capped" and "50%" in r["stop_note"]
++
++
++def _check_bars():
++    # 前段平稳, 最后几日剧烈波动: ATR_now 超过封顶后的止损线 → 兜底价 ≤ 0
++    rows = [(100.0, 101.0, 99.0, 100.0)] * 50 + [(100.0, 400.0, 1.0, 100.0)] * 12
++    return _ohlc(rows, start="2026-08-03")
++
++
++def test_non_positive_stop_or_disaster_is_check_not_green():
++    r = evaluate_position(_pos(100.0, "2026-08-20", code="300001.SZ"), _check_bars(), cfg=DEFAULT_CONFIG)
++    assert r["disaster_stop"] <= 0 or r["stop"] <= 0
++    assert r["status"] == "CHECK" and "需核对" in r["action"] and r["sell_qty"] == 0
++    assert STATUS_ORDER["LEGACY"] < STATUS_ORDER["CHECK"] < STATUS_ORDER["ACTION"]
++
++
++def test_normal_positions_unchanged():
++    path = [10.0] * 40 + list(np.linspace(10, 14, 40)) + list(np.linspace(14, 12, 15))
++    idx = pd.bdate_range("2026-06-01", periods=len(path))
++    c = pd.Series(path, index=idx)
++    bars = pd.DataFrame({"trade_date": idx.strftime("%Y%m%d"), "open": c.values, "high": (c * 1.01).values,
++                         "low": (c * 0.99).values, "close": c.values})
++    r = evaluate_position(PositionInput("159949.SZ", "创业板50ETF", 30000, 10.0, idx[40].strftime("%Y-%m-%d"), "exact"),
++                          bars, cfg=DEFAULT_CONFIG)
++    assert r.get("stop_sanity") in (None, "") and r["status"] in ("RED", "GREEN", "YELLOW", "ACTION")
++
++
++def test_check_rows_not_ordered_not_published_and_in_summary_and_alerts(tmp_path, monkeypatch):
++    monkeypatch.setattr(svc, "STATE_PATH", str(tmp_path / "state.json"))
++    monkeypatch.setattr(svc, "SNAPSHOT_DIR", str(tmp_path / "snapshots"))
++    monkeypatch.setattr(svc, "LIVE_RISK_PATH", str(tmp_path / "risk_state_live.json"))
++    svc.save_state({"positions": {}, "audit": [], "tracking_since": "2026-06-01"})
++    store = {"import_date": "2026-11-03", "positions": {"300001.SZ": {"name": "特锐德", "amount": 100, "cost": 100.0}}}
++    ledger = {"trades": [{"date": "2026-08-20", "time": "10:00:00", "ts_code": "300001.SZ", "side": "buy", "qty": 100,
++                          "amount": 10000, "key": "a"}], "imports": []}
++    bars = _check_bars()
++    rep = svc.build_report(store=store, ledger=ledger, bars_loader=lambda c: bars, regime="RANGE", aiae_regime=None,
++                           today=pd.Timestamp(normalize_bars(bars).index[-1]).strftime("%Y-%m-%d"))
++    row = rep["positions"][0]
++    assert row["status"] == "CHECK"
++    assert rep["summary"].get("CHECK") == 1
++    assert not [o for o in rep["orders"] if o["ts_code"] == "300001.SZ"]
++    assert any(a["type"] == "CHECK" and a["ts_code"] == "300001.SZ" for a in rep["actions"])
++    svc.commit_eod(rep, regime="RANGE", today=rep["as_of"])
++    assert "published" not in (svc.load_state()["positions"].get("300001.SZ") or {})
++    fired = svc.scan_and_alert(rep, push=False)
++    assert any(a["rule_id"] == "trailing_check" for a in fired)
+-- 
+2.43.0
+
