@@ -9,3 +9,9 @@
 [2026-11-13 18:16:02] quant_dashboard: Committing: docs: 双层仓位 v1 包B2 实施日志 (B-1…B-8 在 462385c 上重做)
 [2026-11-13 18:16:02] quant_dashboard: PUSHED at beb5ff6
 [2026-11-13 18:16:02] --- Processing: NEWS ---
+[2026-11-13 18:16:02] NEWS: Committing: docs: 双层仓位 v1 包B2 实施日志 (B-1…B-8 在 462385c 上重做)
+[2026-11-13 18:16:02] NEWS: PUSHED at 41e9027
+[2026-11-13 18:16:02] quant_dashboard: PUSHED
+[2026-11-13 18:16:02] NEWS: PUSHED
+[2026-11-13 18:16:02] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-13 18:16:02] ===== AlphaCore Push v4.1 finished =====
