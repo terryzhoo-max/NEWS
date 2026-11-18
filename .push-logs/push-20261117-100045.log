@@ -9,3 +9,9 @@
 [2026-11-17 10:00:44] quant_dashboard: Committing: docs: 批次3+4 提交7–11 部署日志 (北京11-17 22:58 部署 aa0d86a, 部署前后5项一致, 策略页实际仓位改全站口径94.8) + 11-16 日终核对段
 [2026-11-17 10:00:44] quant_dashboard: PUSHED at c7000e3
 [2026-11-17 10:00:44] --- Processing: NEWS ---
+[2026-11-17 10:00:44] NEWS: Committing: docs: 批次3+4 提交7–11 部署日志 (北京11-17 22:58 部署 aa0d86a, 部署前后5项一致, 策略页实际仓位改全站口径94.8) + 11-16 日终核对段
+[2026-11-17 10:00:44] NEWS: PUSHED at e27234e
+[2026-11-17 10:00:44] quant_dashboard: PUSHED
+[2026-11-17 10:00:44] NEWS: PUSHED
+[2026-11-17 10:00:44] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-17 10:00:44] ===== AlphaCore Push v4.1 finished =====
