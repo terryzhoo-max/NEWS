@@ -9,3 +9,9 @@
 [2026-11-18 09:45:30] quant_dashboard: Committing: docs: 批次3+4 提交7–11 部署后首个交易日核对 (ETF 11-18 日线未到·数据源; D6 重启不改写; 11-18 两份账单导入 覆盖 complete; 登记 15:50 日终覆盖 unknown 缺陷)
 [2026-11-18 09:45:30] quant_dashboard: PUSHED at c9a6916
 [2026-11-18 09:45:30] --- Processing: NEWS ---
+[2026-11-18 09:45:30] NEWS: Committing: docs: 批次3+4 提交7–11 部署后首个交易日核对 (ETF 11-18 日线未到·数据源; D6 重启不改写; 11-18 两份账单导入 覆盖 complete; 登记 15:50 日终覆盖 unknown 缺陷)
+[2026-11-18 09:45:30] NEWS: PUSHED at 1461cc4
+[2026-11-18 09:45:30] quant_dashboard: PUSHED
+[2026-11-18 09:45:30] NEWS: PUSHED
+[2026-11-18 09:45:30] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-18 09:45:30] ===== AlphaCore Push v4.1 finished =====
