@@ -9,3 +9,9 @@
 [2026-11-21 11:38:40] quant_dashboard: Committing: docs: 成交覆盖修复 提交一/二 + 实施日志 (门控部署 46c119f 与首次读数, 底仓豁免维持现状, B2 首个日终核对通过)
 [2026-11-21 11:38:40] quant_dashboard: PUSHED at e3219dd
 [2026-11-21 11:38:40] --- Processing: NEWS ---
+[2026-11-21 11:38:40] NEWS: Committing: docs: 成交覆盖修复 提交一/二 + 实施日志 (门控部署 46c119f 与首次读数, 底仓豁免维持现状, B2 首个日终核对通过)
+[2026-11-21 11:38:40] NEWS: PUSHED at 609e297
+[2026-11-21 11:38:40] quant_dashboard: PUSHED
+[2026-11-21 11:38:40] NEWS: PUSHED
+[2026-11-21 11:38:40] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-21 11:38:40] ===== AlphaCore Push v4.1 finished =====
