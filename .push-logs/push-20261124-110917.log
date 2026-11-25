@@ -9,3 +9,9 @@
 [2026-11-24 11:09:17] quant_dashboard: Committing: docs: 侧栏闪烁修复 实施日志 + STATUS (代码见 P0-2 界面修正与侧栏闪烁修复两个提交)
 [2026-11-24 11:09:17] quant_dashboard: PUSHED at bdee3f9
 [2026-11-24 11:09:17] --- Processing: NEWS ---
+[2026-11-24 11:09:17] NEWS: Committing: docs: 侧栏闪烁修复 实施日志 + STATUS (代码见 P0-2 界面修正与侧栏闪烁修复两个提交)
+[2026-11-24 11:09:17] NEWS: PUSHED at 30db6bb
+[2026-11-24 11:09:17] quant_dashboard: PUSHED
+[2026-11-24 11:09:17] NEWS: PUSHED
+[2026-11-24 11:09:17] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-24 11:09:17] ===== AlphaCore Push v4.1 finished =====
