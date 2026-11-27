@@ -8,3 +8,9 @@
 [2026-11-27 02:00:01] quant_dashboard: Committing: M1 MR评分规则页签止血(界面): 删除第二套仓位/止损规则与计算器, 页头改为研究用状态行; strategy.js v213
 [2026-11-27 02:00:01] quant_dashboard: PUSHED at 1527ab1
 [2026-11-27 02:00:01] --- Processing: NEWS ---
+[2026-11-27 02:00:01] NEWS: Committing: M1 MR评分规则页签止血(界面): 删除第二套仓位/止损规则与计算器, 页头改为研究用状态行; strategy.js v213
+[2026-11-27 02:00:01] NEWS: PUSHED at 699be8f
+[2026-11-27 02:00:01] quant_dashboard: PUSHED
+[2026-11-27 02:00:01] NEWS: PUSHED
+[2026-11-27 02:00:01] Pushed: 2  Errors: 0  Exit: 0
+[2026-11-27 02:00:01] ===== AlphaCore Push v4.1 finished =====
