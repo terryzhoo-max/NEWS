@@ -1,0 +1,10 @@
+[2026-11-27 02:00:01] ===== AlphaCore Push v4.1 started =====
+[2026-11-27 02:00:01] Script root: D:\FIONA\google AI
+[2026-11-27 02:00:01] Git: git version 2.54.0.windows.1
+[2026-11-27 02:00:01] --- Processing: quant_dashboard ---
+[2026-11-27 02:00:01] quant_dashboard: pre-push check started
+[2026-11-27 02:03:50] pre-push: 快照测试 224s | AST: 通过 | pytest: 2821 passed, 1 skipped, 35 deselected, 117 warnings, 2 subtests passed in 177.57s (0:02:57) | production_check: 通过 | 前端: 58/58 通过
+[2026-11-27 02:00:01] quant_dashboard: pre-push check passed
+[2026-11-27 02:00:01] quant_dashboard: Committing: M1 MR评分规则页签止血(界面): 删除第二套仓位/止损规则与计算器, 页头改为研究用状态行; strategy.js v213
+[2026-11-27 02:00:01] quant_dashboard: PUSHED at 1527ab1
+[2026-11-27 02:00:01] --- Processing: NEWS ---
